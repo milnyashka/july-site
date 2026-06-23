@@ -1,0 +1,14 @@
+{
+  "placeholderImages": [
+    {
+      "id": "heroImage",
+      "description": "Abstract gaming background",
+      "imageUrl": "https://images.unsplash.com/photo-1689443111070-2c1a1110fe82?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxnYW1pbmclMjBhYnN0cmFjdHxlbnwwfHx8fDE3Njc3MDE0MTd8MA&ixlib=rb-4.1.0&q=80&w=1080"
+    },
+    {
+      "id": "julyBypassProduct",
+      "description": "July Bypass product image",
+      "imageUrl": "https://images.unsplash.com/photo-1648679539669-96cd965e6636?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxhYnN0cmFjdCUyMHNlY3VyaXR5fGVufDB8fHx8MTc2NzcwMjkzMHww&ixlib=rb-4.1.0&q=80&w=1080"
+    }
+  ]
+}
