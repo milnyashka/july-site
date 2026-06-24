@@ -47,6 +47,15 @@ export default function SupportPage() {
             {t.telegram}
           </Button>
         </a>
+
+        <a
+          href={`mailto:${supportLinks.email}`}
+          className="w-full"
+        >
+          <Button size="lg" variant="outline" className="w-full h-14 text-base font-bold">
+            ✉ {t.email}: {supportLinks.email}
+          </Button>
+        </a>
       </div>
 
       <p className="mt-8 text-center text-sm text-muted-foreground max-w-lg mx-auto">

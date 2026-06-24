@@ -10,12 +10,16 @@ export function SiteFooter() {
   const footerLinks = {
     support: [
       { name: dict.footer.download, href: "/download" },
-      { name: dict.footer.terms, href: "/terms" },
       { name: dict.nav.support, href: "/support" },
       { name: dict.footer.discord, href: "https://discord.com/invite/ap4pWsGuGW", external: true },
       { name: dict.nav.status, href: "/status" },
     ],
+    legal: [
+      { name: dict.footer.terms, href: "/terms" },
+      { name: dict.footer.privacy, href: "/privacy" },
+    ],
     products: [
+      { name: dict.footer.tariffs, href: "/products" },
       { name: dict.product.name, href: "/products" },
     ],
   };
@@ -58,16 +62,28 @@ export function SiteFooter() {
               </ul>
             </div>
             <div>
-                <h3 className="font-semibold tracking-wider uppercase font-headline">{dict.footer.supportedProducts}</h3>
-                <ul className="mt-4 space-y-2">
-                    {footerLinks.products.map((link) => (
-                    <li key={link.name}>
-                        <Link href={localizedPath(locale, link.href)} className="text-sm text-muted-foreground hover:text-foreground">
-                        {link.name}
-                        </Link>
-                    </li>
-                    ))}
-                </ul>
+              <h3 className="font-semibold tracking-wider uppercase font-headline">{dict.footer.supportedProducts}</h3>
+              <ul className="mt-4 space-y-2">
+                {footerLinks.products.map((link) => (
+                  <li key={link.name}>
+                    <Link href={localizedPath(locale, link.href)} className="text-sm text-muted-foreground hover:text-foreground">
+                      {link.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold tracking-wider uppercase font-headline">Legal</h3>
+              <ul className="mt-4 space-y-2">
+                {footerLinks.legal.map((link) => (
+                  <li key={link.name}>
+                    <Link href={localizedPath(locale, link.href)} className="text-sm text-muted-foreground hover:text-foreground">
+                      {link.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         </div>
@@ -75,6 +91,7 @@ export function SiteFooter() {
           <p>© {new Date().getFullYear()} July. {dict.footer.rights}</p>
           <div className="flex items-center gap-4 mt-4 md:mt-0">
             <Link href={localizedPath(locale, '/terms')} className="hover:text-foreground">{dict.footer.terms}</Link>
+            <Link href={localizedPath(locale, '/privacy')} className="hover:text-foreground">{dict.footer.privacy}</Link>
             <Link href={localizedPath(locale, '/support')} className="hover:text-foreground">{dict.nav.support}</Link>
             <Link href={localizedPath(locale, '/status')} className="hover:text-foreground">{dict.nav.status}</Link>
           </div>

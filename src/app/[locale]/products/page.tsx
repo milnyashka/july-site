@@ -20,6 +20,7 @@ export default function ProductsPage() {
         <p className="max-w-2xl mx-auto mt-4 text-muted-foreground md:text-xl">
           {dict.productsPage.walletDescription}
         </p>
+
         <div className="mt-6 flex flex-col items-center justify-center gap-4 sm:flex-row">
           <Link href={localizedPath(locale, '/wallet/topup')}>
             <Button variant="outline" className="w-full sm:w-auto">

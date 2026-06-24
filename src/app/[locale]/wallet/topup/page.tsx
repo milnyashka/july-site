@@ -3,14 +3,14 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Bitcoin, Headphones, Loader2, ArrowLeft, Send } from 'lucide-react';
+import { Bitcoin, Headphones, Loader2, ArrowLeft, Send, Bot, QrCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Icon } from '@/components/icons';
 import { useAuth } from '@/components/auth-provider';
-import { currencyForLocale, formatBalanceForLocale, formatMoney } from '@/lib/currency';
-import { getTopupAmounts } from '@/lib/plans';
+import { formatBalanceForLocale } from '@/lib/currency';
 import { supportLinks } from '@/lib/support-links';
+import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n/I18nProvider';
 import { localizedPath } from '@/i18n/localized-path';
 import { useToast } from '@/hooks/use-toast';
@@ -21,9 +21,11 @@ export default function TopUpPage() {
   const t = dict.wallet;
   const router = useRouter();
   const { toast } = useToast();
-  const [cryptoLoading, setCryptoLoading] = useState<number | null>(null);
-  const topupAmounts = getTopupAmounts(locale);
-  const displayCurrency = currencyForLocale(locale);
+  const [selectedMethod, setSelectedMethod] = useState<'crypto' | 'cryptobot' | 'sbp' | null>(null);
+  const [loadingAmount, setLoadingAmount] = useState<number | null>(null);
+
+  // Fixed amounts in RUB as requested
+  const topupAmounts = [50, 100, 250, 500, 1000, 2500, 5000]; // RUB as requested
 
   useEffect(() => {
     if (!loading && !user) {
@@ -31,30 +33,87 @@ export default function TopUpPage() {
     }
   }, [user, loading, router, locale]);
 
-  const handleCrypto = async (amount: number) => {
-    setCryptoLoading(amount);
-    try {
-      const res = await fetch('/api/wallet/topup/crypto', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount }),
+  // Pure top-up functions (no loading inside)
+  const topUpCrypto = async (amount: number) => {
+    const res = await fetch('/api/wallet/topup/crypto', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      toast({
+        title: t.topUpFailed,
+        description: data.error === 'payment_not_configured' ? t.notConfigured : undefined,
+        variant: 'destructive',
       });
-      const data = await res.json();
+      throw new Error(data.error || 'failed');
+    }
 
-      if (!res.ok) {
-        toast({
-          title: t.topUpFailed,
-          description: data.error === 'payment_not_configured' ? t.notConfigured : undefined,
-          variant: 'destructive',
-        });
-        return;
-      }
+    window.location.href = data.url;
+  };
 
-      window.location.href = data.url;
-    } catch {
+  const topUpCryptobot = async (amount: number) => {
+    const res = await fetch('/api/wallet/topup/cryptobot', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
       toast({ title: t.topUpFailed, variant: 'destructive' });
+      throw new Error('failed');
+    }
+
+    const message = `Хочу пополнить ${amount} ₽ через CryptoBot. Email: ${profile?.email ?? ''}. Topup ID: ${data.topupId ?? ''}`;
+    window.open(`${supportLinks.telegram}?text=${encodeURIComponent(message)}`, '_blank');
+
+    toast({ 
+      title: 'Заявка создана', 
+      description: 'Напиши в Telegram — пришлём реквизиты для CryptoBot' 
+    });
+  };
+
+  const topUpSbp = async (amount: number) => {
+    const res = await fetch('/api/wallet/topup/sbp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      toast({ title: t.topUpFailed, variant: 'destructive' });
+      throw new Error('failed');
+    }
+
+    const message = `Хочу пополнить ${amount} ₽ через СБП. Email: ${profile?.email ?? ''}. Topup ID: ${data.topupId ?? ''}`;
+    window.open(`${supportLinks.telegram}?text=${encodeURIComponent(message)}`, '_blank');
+
+    toast({ 
+      title: 'Заявка на СБП создана', 
+      description: 'Напиши в поддержку — пришлём QR-код или ссылку для оплаты' 
+    });
+  };
+
+  const handleAmount = async (amount: number) => {
+    if (!selectedMethod) return;
+
+    setLoadingAmount(amount);
+    try {
+      if (selectedMethod === 'crypto') {
+        await topUpCrypto(amount);
+      } else if (selectedMethod === 'cryptobot') {
+        await topUpCryptobot(amount);
+      } else if (selectedMethod === 'sbp') {
+        await topUpSbp(amount);
+      }
+    } catch {
+      // errors already toasted inside
     } finally {
-      setCryptoLoading(null);
+      setLoadingAmount(null);
     }
   };
 
@@ -85,34 +144,79 @@ export default function TopUpPage() {
       </p>
       <p className="text-sm text-muted-foreground mb-8">{t.topUpHint}</p>
 
-      <div className="space-y-6">
-      <Card className="bg-card/80 border-border/50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Bitcoin className="h-5 w-5 text-primary" />
-            {t.cryptoTitle}
-          </CardTitle>
-          <CardDescription>{t.cryptoDescription}</CardDescription>
-        </CardHeader>
-        <CardContent className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {topupAmounts.map((amount) => (
-            <Button
-              key={`crypto-${amount}`}
-              variant="outline"
-              className="h-12 text-base font-semibold"
-              onClick={() => handleCrypto(amount)}
-              disabled={cryptoLoading !== null}
-            >
-              {cryptoLoading === amount ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                formatMoney(amount, displayCurrency)
-              )}
-            </Button>
-          ))}
-        </CardContent>
-      </Card>
+      {/* Payment method selector */}
+      <div className="mb-6">
+        <div className="text-lg font-semibold mb-4">{t.selectPaymentMethod}</div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {[
+            { id: 'crypto' as const, label: t.cryptoTitle, icon: Bitcoin, desc: t.cryptoDescription },
+            { id: 'cryptobot' as const, label: t.cryptobotTitle, icon: Bot, desc: t.cryptobotDescription },
+            { id: 'sbp' as const, label: t.sbpTitle, icon: QrCode, desc: t.sbpDescription },
+          ].map((method) => {
+            const IconComp = method.icon;
+            const isActive = selectedMethod === method.id;
+            return (
+              <button
+                key={method.id}
+                onClick={() => setSelectedMethod(method.id)}
+                className={cn(
+                  "rounded-xl border p-4 text-left transition hover:border-primary/70 bg-card/60",
+                  isActive && "border-primary bg-primary/5 ring-1 ring-primary/30"
+                )}
+              >
+                <div className="flex items-center gap-3 mb-1">
+                  <IconComp className="h-5 w-5 text-primary" />
+                  <span className="font-semibold text-base">{method.label}</span>
+                </div>
+                <p className="text-xs text-muted-foreground line-clamp-2">{method.desc}</p>
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
+      {/* Amounts - shown only after method selected */}
+      {selectedMethod && (
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <div className="text-lg font-semibold">{t.selectAmount} (₽)</div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSelectedMethod(null);
+                setLoadingAmount(null);
+              }}
+            >
+              {t.changePaymentMethod}
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            {topupAmounts.map((amount) => (
+              <Button
+                key={amount}
+                variant="outline"
+                className="h-14 text-xl font-bold"
+                onClick={() => handleAmount(amount)}
+                disabled={loadingAmount !== null}
+              >
+                {loadingAmount === amount ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  `${amount} ₽`
+                )}
+              </Button>
+            ))}
+          </div>
+
+          <p className="mt-3 text-xs text-muted-foreground text-center">
+            После выбора суммы вас перенаправит или откроется чат с поддержкой для подтверждения.
+          </p>
+        </div>
+      )}
+
+      {/* Manual support (always visible) */}
       <Card className="bg-card/80 border-border/50">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
@@ -148,7 +252,6 @@ export default function TopUpPage() {
           <p className="text-xs text-muted-foreground">{t.supportHint}</p>
         </CardContent>
       </Card>
-      </div>
     </div>
   );
 }

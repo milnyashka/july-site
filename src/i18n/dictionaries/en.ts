@@ -1,7 +1,7 @@
 export const en = {
   meta: {
     title: 'July - Dominate Every Game',
-    description: 'July Bypass — private access, instant delivery, stable performance, and 24/7 support.',
+    description: 'Jule Market — choose any product. Stable performance, instant delivery and 24/7 support.',
   },
   nav: {
     home: 'Home',
@@ -21,11 +21,13 @@ export const en = {
   },
   footer: {
     description:
-      'At July, we build private bypass tools with instant delivery and real support. July Bypass is live now — more products coming soon.',
+      'July is a marketplace where you can find any products, tools, accounts and more. Instant auto-delivery and live 24/7 support.',
     supportContact: 'Support & Contact',
     supportedProducts: 'Supported Products',
     rights: 'All rights reserved.',
     terms: 'Terms of Service',
+    privacy: 'Privacy Policy',
+    tariffs: 'Tariffs & Pricing',
     download: 'Download',
     discord: 'Discord',
   },
@@ -33,7 +35,7 @@ export const en = {
     title: 'Dominate',
     titleHighlight: 'Every Game',
     description:
-      'July Bypass — private access, stable performance, and instant delivery with 24/7 support.',
+      'Jule Market — choose your product. Stable performance and instant delivery with 24/7 support.',
     exploreProducts: 'Explore Products',
     howWeOperate: 'How We Operate',
     secure: 'Secure',
@@ -60,7 +62,7 @@ export const en = {
     eyebrow: 'Player Favorites',
     title: 'Featured Products',
     description:
-      'July Bypass — private access with instant delivery, live support, and active detection monitoring.',
+      'The most popular products purchased by our users.',
     viewAll: 'View All Products',
   },
   socialProof: {
@@ -71,53 +73,53 @@ export const en = {
     viewAll: 'View All Reviews',
   },
   howItWorks: {
-    eyebrow: 'From purchase to play',
+    eyebrow: 'Simple path to your item',
     title: 'How We Operate',
     description:
-      'Five steps — pick a plan, get your key, install deps, run July Bypass, stay covered. No fluff.',
+      'Top up your balance, choose any product, pay, and receive instantly with auto-delivery. Install dependencies if needed. 24/7 monitoring and fast support.',
     steps: [
       {
-        title: 'Pick your plan',
+        title: 'Top up balance',
         description:
-          'July Bypass from $0.14 (3 hours) to $11.63 (30 days). Choose what fits — upgrade or renew anytime.',
+          'Fund your wallet using crypto, CryptoBot, SBP or other methods.',
       },
       {
-        title: 'Balance credited automatically',
+        title: 'Choose product',
         description:
-          'Crypto tops up your July wallet. All bypass purchases are paid from balance — no separate checkout per plan.',
+          'Browse the marketplace for tools, accounts, licenses and any other goods.',
       },
       {
-        title: 'Download prerequisites',
+        title: 'Pay',
         description:
-          'Grab DirectX, Visual C++ Runtimes, and GameLoop 32-bit from our Download page — then July Bypass itself.',
+          'Pay directly from your balance — fast and seamless.',
       },
       {
-        title: 'Launch & inject',
+        title: 'Receive instantly',
         description:
-          'Enter your key, run the loader, and you are in. Most users are up within 3–5 minutes.',
+          'Get your license or product in real-time with automatic delivery.',
       },
       {
-        title: '24/7 monitoring & support',
+        title: 'Setup & support',
         description:
-          'Devs watch detections around the clock. Stuck on setup? Hit us on Discord or Telegram — real humans, fast replies.',
+          'Install dependencies if required. Round-the-clock monitoring and prompt 24/7 support.',
       },
     ],
-    ctaProducts: 'Get July Bypass',
-    ctaDownload: 'Go to Download',
+    ctaProducts: 'Browse Marketplace',
+    ctaDownload: 'Download',
     ctaSupport: 'Need help?',
   },
   whyChooseUs: {
     eyebrow: 'Why players stay',
     title: 'Why Choose July?',
     description:
-      'Everything we ship is battle-tested with competitive players, monitored by devs, and backed by humans who actually play the games.',
+      'Premium support quality, regular product updates and assortment expansion, strong security, and a large active user base.',
     advantages: [
-      { title: '100% Undetectable', description: 'Our tools are constantly updated to stay ahead of detection systems. We prioritize your safety above all else.' },
-      { title: 'Lightning Fast Setup', description: 'Get up and running in minutes, not hours. Our intuitive loaders make installation effortless.' },
-      { title: 'Trusted by Thousands', description: 'Join thousands of satisfied customers who trust July for their gaming enhancement needs.' },
-      { title: 'Premium Quality', description: "We don't compromise on quality. Every tool is crafted with precision and attention to detail." },
-      { title: 'Private & Secure', description: 'Your privacy is our priority. All transactions and data are encrypted and kept confidential.' },
-      { title: '24/7 Support', description: 'Our dedicated support team is always ready to help you with any questions or issues.' },
+      { title: '100% Undetectable', description: 'Fast responses and quick resolution of any issues around the clock.' },
+      { title: 'Updates & Assortment', description: 'We regularly update products and add fresh items to the catalog.' },
+      { title: 'Security', description: 'Reliable payments and strong protection of your data and transactions.' },
+      { title: 'Large Community', description: "Thousands of users have chosen July and keep coming back." },
+      { title: 'Premium Quality', description: 'Every product is verified and meets high standards.' },
+      { title: 'Instant Delivery', description: 'Automatic delivery of goods immediately after payment.' },
     ],
     happyCustomers: 'Happy Customers',
     uptimeGuarantee: 'Uptime Guarantee',
@@ -132,7 +134,7 @@ export const en = {
       {
         question: 'Is your cheat undetected?',
         answer:
-          'Yes, our tools are constantly updated to stay ahead of detection systems. We prioritize your safety above all else and have a 99.9% uptime record. Any potential detection leads to an immediate product takedown and update.',
+          'Yes, Fast responses and quick resolution of any issues around the clock.and have a 99.9% uptime record. Any potential detection leads to an immediate product takedown and update.',
       },
       {
         question: 'How do I install the cheat?',
@@ -230,16 +232,23 @@ export const en = {
     topUp: 'Top Up',
     topUpTitle: 'Top Up Balance',
     topUpDescription: 'Current balance:',
-    topUpHint: 'Crypto tops up automatically. Support can credit your balance manually — just as fast.',
-    cryptoTitle: 'Top up via Cryptomus',
+    topUpHint: 'Choose payment method first, then amount. Crypto and CryptoBot auto/fast. SBP via QR from bank app.',
+    selectPaymentMethod: 'Choose payment method',
+    selectAmount: 'Select top-up amount',
+    changePaymentMethod: 'Change payment method',
+    cryptoTitle: 'Top up via Crypto',
+    cryptobotTitle: 'Top up via CryptoBot',
+    sbpTitle: 'Top up via SBP',
     supportTitle: 'Top up via support',
     supportDescription: 'Message us on Discord or Telegram — support will credit your balance manually after payment.',
     supportDiscord: 'Message on Discord',
     supportTelegram: 'Message on Telegram',
     supportEmailNote: 'Include your account email: {email}',
     supportTelegramMessage: 'Hi! I want to top up my July balance. Email: {email}',
-    supportHint: 'Tell them the amount and payment method (crypto, card, etc.). Balance is credited after payment is confirmed.',
-    cryptoDescription: 'USDT, BTC, LTC and more. Balance is credited automatically after network confirmation.',
+    supportHint: 'Tell the amount and method (Crypto, CryptoBot or SBP). Support credits after payment.',
+    cryptoDescription: 'USDT, BTC, LTC and other cryptocurrencies. Balance is credited automatically after confirmation.',
+    cryptobotDescription: 'Pay via @CryptoBot in Telegram. Fast and convenient.',
+    sbpDescription: 'SBP (NSPK) — pay via QR code or link from your bank app (Sber, T-Bank, Alfa, etc.).',
     cardTitle: 'Card (via Sellix)',
     cardDescription: 'Pay with card. Balance is added automatically — use the same email as your July account.',
     cardEmailNote: 'Important: pay with the email you registered on July, otherwise balance won\'t be credited.',
@@ -372,10 +381,11 @@ export const en = {
   },
   supportPage: {
     title: 'Support',
-    description: 'Need help? Hit us up on Discord or Telegram — real people, fast replies.',
+    description: 'Need help? Use Telegram, Discord or email for feedback. Group format is not accepted — open a ticket or message directly.',
     discord: 'Discord',
-    telegram: 'Telegram',
-    hint: 'Open a ticket with your order ID and a short description of the issue — we usually respond within a few minutes.',
+    telegram: 'Telegram (@mihnyashka)',
+    email: 'Email',
+    hint: 'Open a ticket in Telegram @mihnyashka or email milnyashka@gmail.com with your order ID and description. We usually reply within minutes.',
     backHome: 'Back to Home',
   },
   admin: {
@@ -411,20 +421,35 @@ export const en = {
   },
   termsPage: {
     title: 'Terms of Service',
-    lastUpdated: 'Last updated: June 21, 2026',
+    lastUpdated: 'Last updated: June 24, 2026',
     contactDiscord: 'Contact on Discord',
     browseProducts: 'Browse Products',
     sections: [
-      { title: '1. Acceptance of Terms', content: 'By accessing July, purchasing July Bypass, or using any of our services, you agree to these Terms of Service. If you do not agree, do not use the site or our products.' },
-      { title: '2. Digital Products & Licenses', content: 'All products sold through July are digital licenses and software access. Delivery is automatic after payment confirmation. You receive a personal license key tied to your purchase — sharing, reselling, or leaking keys is prohibited.' },
-      { title: '3. Account & Access', content: 'You are responsible for keeping your license key, login details, and purchase proof secure. We are not liable for lost access caused by user negligence, key sharing, or unauthorized third-party access.' },
-      { title: '4. Refund Policy', content: 'Due to the digital nature of our products, all sales are final. Refunds are not issued once a key has been delivered or activated. If you experience a technical issue our support cannot resolve, we may offer a replacement key or store credit at our discretion.' },
-      { title: '5. Product Availability & Updates', content: 'July Bypass may be updated, paused, or temporarily disabled for maintenance or detection-related reasons without prior notice. We do not guarantee uninterrupted uptime or permanent compatibility with any game or platform version.' },
-      { title: '6. Prohibited Use', content: 'You may not reverse engineer, redistribute, crack, or attempt to bypass our licensing system. Abuse of support, chargebacks after delivery, or fraudulent payment activity will result in immediate license termination without refund.' },
-      { title: '7. Disclaimer', content: 'July products are provided as-is. We make no guarantees regarding detection status, ban protection, or in-game results. Use at your own risk. July is not affiliated with any game developer or publisher.' },
-      { title: '8. Support', content: 'Support is available through our Discord server and Telegram. Response times may vary. For fastest help, open a ticket with your order ID and a clear description of the issue.' },
-      { title: '9. Changes to Terms', content: 'We may update these terms at any time. Continued use of July after changes are posted constitutes acceptance of the updated terms.' },
-      { title: '10. Contact', content: 'Questions about these terms? Reach us through Discord or Telegram — that is our primary support channel.' },
+      { title: '1. General Provisions', content: 'This Terms of Service governs the use of July service (July Bypass). By using the site, registering, topping up balance or purchasing access, you fully accept the terms. If you disagree — stop using the service.' },
+      { title: '2. Nature of Services and Digital Goods', content: 'July provides digital goods — time-based access to July Bypass (license keys for hours/days). Value lies in access, support and updates. Goods are intangible.' },
+      { title: '3. Disclaimer of Warranties and Liability', content: 'Service is provided "AS IS". We do not guarantee results, uptime or absence of detections. You make all usage decisions at your own risk. We are not liable for losses, bans or any consequences.' },
+      { title: '4. Legality of Use', content: 'You agree to use the service only within applicable law. Full responsibility for legality of using July Bypass lies with you.' },
+      { title: '5. Payments, Tariffs and Refunds', content: 'Payments are made according to tariffs listed on the site (from 10 RUB for 3 hours to 849 RUB for 30 days, with possible reseller and tier discounts). Digital goods are non-refundable after key delivery. Refund only possible for technical fault of the service and upon support request within 24 hours. Chargebacks without prior support contact are prohibited.' },
+      { title: '6. Intellectual Property and Restrictions', content: 'All materials and keys are protected. Copying, redistribution, reselling of keys, reverse engineering or bypassing protection is prohibited. Violation results in access termination without compensation.' },
+      { title: '7. Access Limitation', content: 'We may suspend access in case of agreement violation, abuse or at the request of payment providers.' },
+      { title: '8. Privacy', content: 'We collect only minimal data necessary for operation (email, purchase history, technical info). See Privacy Policy for details.' },
+      { title: '9. Changes to Terms', content: 'Current version is always available on the site. Continued use means acceptance of the new version.' },
+      { title: '10. Contact & Support', content: 'For all questions (including payment and key tickets): Telegram @mihnyashka, Discord, email milnyashka@gmail.com. Use personal messages / ticket format.' },
+    ],
+  },
+  privacyPage: {
+    title: 'Privacy Policy',
+    lastUpdated: 'Last updated: June 24, 2026',
+    intro: 'This Privacy Policy governs the collection, use and protection of user information for the July service (July Bypass).',
+    sections: [
+      { title: '1. General Provisions', content: 'This Policy regulates the processing and protection of information you provide when using the July website and service. By using the service you confirm acceptance of this Policy. If you disagree — stop using it.' },
+      { title: '2. Information We Collect', content: 'We may collect: account identifiers (email, ID), technical information (IP address, browser, device, OS), interaction and purchase history. We do not require passport data or other excessive personal information.' },
+      { title: '3. Use of Information', content: 'Data is used only to: operate the service (auth, key delivery, balance), communicate with users and provide support, analyze and improve the service.' },
+      { title: '4. Sharing Information', content: 'We do not share data with third parties except when required by law or necessary to fulfill obligations (payment providers: Cryptomus, Sellix and future SBP/NSPK). Also possible with your consent.' },
+      { title: '5. Storage and Protection', content: 'Data is stored for the necessary period. We take reasonable protection measures but do not guarantee absolute security during internet transmission.' },
+      { title: '6. Disclaimer', content: 'You understand that transmitting data over the internet always involves risks. We are not responsible for loss or disclosure caused by third parties or by you.' },
+      { title: '7. Changes to This Policy', content: 'We may update the Policy without prior notice. The current version is always available on the site. Continued use constitutes acceptance of the updated Policy.' },
     ],
   },
 };
+

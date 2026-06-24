@@ -1,12 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { CreditCard, KeyRound, Download, Rocket, Headphones } from 'lucide-react';
+import { CreditCard, ShoppingCart, Banknote, Download, Headphones } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useI18n } from '@/i18n/I18nProvider';
 import { localizedPath } from '@/i18n/localized-path';
 
-const stepIcons = [CreditCard, KeyRound, Download, Rocket, Headphones];
+const stepIcons = [CreditCard, ShoppingCart, Banknote, Download, Headphones];
 
 export function HowItWorks() {
     const { locale, dict } = useI18n();
@@ -25,7 +25,7 @@ export function HowItWorks() {
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8">
                     {t.steps.map((step, index) => {
                         const Icon = stepIcons[index];
                         return (
