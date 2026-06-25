@@ -1,4 +1,4 @@
-import { Product } from './types';
+import type { Product } from './types';
 
 export const products: Product[] = [
   {
@@ -11,5 +11,7 @@ export const products: Product[] = [
     rating: 4.9,
     reviewsCount: 42,
     tags: ['MOST POPULAR'],
+    gameId: 'pubg-mobile',
+    categoryId: 'bypass-hax',
   },
 ];

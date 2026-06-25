@@ -167,6 +167,33 @@ export const en = {
     mostPopular: 'MOST POPULAR',
     featured: 'FEATURED',
   },
+  gameCatalog: {
+    pickCategory: 'Pick a category',
+    backToGames: 'Back to games',
+    categoryDescription: '{game} products — {category}.',
+    bypassHax: 'Bypass & Hax',
+    accounts: 'Accounts',
+    available: 'Available',
+    comingSoon: 'Soon',
+    comingSoonTitle: 'Coming soon',
+    comingSoonDescription: '{category} for {game} is in development.',
+    askSupport: 'Contact support',
+    supportMessage: 'Hi! Interested in {category} for {game}.',
+    games: {
+      'pubg-mobile': {
+        name: 'PUBG Mobile',
+        description: 'Bypass, tools and accounts for PUBG Mobile.',
+      },
+      rust: {
+        name: 'Rust',
+        description: 'Tools and accounts for Rust.',
+      },
+      cs2: {
+        name: 'CS2',
+        description: 'Software and accounts for Counter-Strike 2.',
+      },
+    },
+  },
   purchaseDialog: {
     title: 'Choose duration',
     description: 'July Bypass — pay from balance. Pick how long you want access.',

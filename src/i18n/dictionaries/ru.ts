@@ -167,6 +167,33 @@ export const ru = {
     mostPopular: 'ПОПУЛЯРНО',
     featured: 'ИЗБРАННОЕ',
   },
+  gameCatalog: {
+    pickCategory: 'Выбери категорию',
+    backToGames: 'Назад к играм',
+    categoryDescription: 'Товары {game} — {category}.',
+    bypassHax: 'Bypass & Hax',
+    accounts: 'Accounts',
+    available: 'В наличии',
+    comingSoon: 'Скоро',
+    comingSoonTitle: 'Скоро будет',
+    comingSoonDescription: '{category} для {game} — в разработке.',
+    askSupport: 'Написать в поддержку',
+    supportMessage: 'Привет! Интересует {category} для {game}.',
+    games: {
+      'pubg-mobile': {
+        name: 'PUBG Mobile',
+        description: 'Bypass, софт и аккаунты для PUBG Mobile.',
+      },
+      rust: {
+        name: 'Rust',
+        description: 'Инструменты и аккаунты для Rust.',
+      },
+      cs2: {
+        name: 'CS2',
+        description: 'Софт и аккаунты для Counter-Strike 2.',
+      },
+    },
+  },
   purchaseDialog: {
     title: 'Выбери срок',
     description: 'July Bypass — оплата с баланса. Выбери на сколько покупаешь.',

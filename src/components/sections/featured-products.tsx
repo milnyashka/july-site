@@ -1,7 +1,7 @@
 'use client';
 
-import { products } from "@/lib/products"
-import { ProductCard } from "@/components/product-card"
+import { getVisibleGames } from "@/lib/game-catalog"
+import { GameProductCard } from "@/components/game-product-card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
@@ -10,7 +10,7 @@ import { localizedPath } from "@/i18n/localized-path"
 
 export function FeaturedProducts() {
   const { locale, dict } = useI18n();
-  const featured = products.filter(p => p.tags.includes('MOST POPULAR') || p.tags.includes('FEATURED')).slice(0, 4)
+  const featured = getVisibleGames()
 
   return (
     <section className="container">
@@ -34,9 +34,11 @@ export function FeaturedProducts() {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 gap-6 max-w-sm mx-auto">
-        {featured.map((product) => (
-          <ProductCard key={product.id} product={product} />
+      <div className="flex justify-center">
+        {featured.map((game) => (
+          <div key={game.id} className="w-full max-w-md">
+            <GameProductCard game={game} />
+          </div>
         ))}
       </div>
     </section>

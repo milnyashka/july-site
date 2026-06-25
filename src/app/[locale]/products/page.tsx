@@ -1,7 +1,7 @@
 'use client';
 
-import { products } from '@/lib/products';
-import { ProductCard } from '@/components/product-card';
+import { getVisibleGames } from '@/lib/game-catalog';
+import { GameProductCard } from '@/components/game-product-card';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
@@ -37,9 +37,11 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 max-w-sm mx-auto">
-        {products.map((product) => (
-          <ProductCard key={product.id} product={product} />
+      <div className="flex justify-center">
+        {getVisibleGames().map((game) => (
+          <div key={game.id} className="w-full max-w-md">
+            <GameProductCard game={game} />
+          </div>
         ))}
       </div>
     </div>

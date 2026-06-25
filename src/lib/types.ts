@@ -1,4 +1,4 @@
-import type { StaticImageData } from "next/image";
+import type { GameCategoryId, GameId } from './game-catalog';
 
 export type Product = {
   id: string;
@@ -10,6 +10,8 @@ export type Product = {
   rating: number;
   reviewsCount: number;
   tags: ('MOST POPULAR' | 'FEATURED')[];
+  gameId: GameId;
+  categoryId: GameCategoryId;
 };
 
 export type Review = {

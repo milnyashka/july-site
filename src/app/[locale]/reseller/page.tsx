@@ -6,8 +6,8 @@ import { useRouter } from 'next/navigation';
 import { ArrowRight, BadgePercent } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ProductCard } from '@/components/product-card';
-import { products } from '@/lib/products';
+import { GameProductCard } from '@/components/game-product-card';
+import { getVisibleGames } from '@/lib/game-catalog';
 import { useAuth } from '@/components/auth-provider';
 import { isReseller, resolveAccountRole } from '@/lib/roles';
 import { useI18n } from '@/i18n/I18nProvider';
@@ -60,9 +60,11 @@ export default function ResellerPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 max-w-sm mx-auto">
-        {products.map((product) => (
-          <ProductCard key={product.id} product={product} reseller />
+      <div className="flex justify-center">
+        {getVisibleGames().map((game) => (
+          <div key={game.id} className="w-full max-w-md">
+            <GameProductCard game={game} />
+          </div>
         ))}
       </div>
     </div>
