@@ -25,6 +25,13 @@ export function rubToUsd(rub: number): number {
   return Math.round((rub / RUB_PER_USD) * 100) / 100;
 }
 
+export function usdtToCreditAmount(usdt: number, currency: Currency): number {
+  if (currency === 'rub') {
+    return Math.round(usdt * RUB_PER_USD * 100) / 100;
+  }
+  return Math.round(usdt * 100) / 100;
+}
+
 export function convertAmount(
   amount: number,
   from: Currency,

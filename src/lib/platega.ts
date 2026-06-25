@@ -24,7 +24,7 @@ type PlategaTransactionResponse = {
   status: string;
 };
 
-type PlategaCallbackPayload = {
+export type PlategaCallbackPayload = {
   id: string;
   amount: number;
   currency: string;
@@ -102,7 +102,16 @@ export async function createPlategaTransaction(
   };
 }
 
-export async function getPlategaTransactionStatus(transactionId: string) {
+export type PlategaTransactionStatus = {
+  id: string;
+  status: string;
+  payload?: string;
+  paymentDetails?: { amount?: number; currency?: string };
+};
+
+export async function getPlategaTransactionStatus(
+  transactionId: string
+): Promise<PlategaTransactionStatus> {
   const { merchantId, apiKey } = getCredentials();
 
   const res = await fetch(`${PLATEGA_API}/transaction/${transactionId}`, {
@@ -115,7 +124,7 @@ export async function getPlategaTransactionStatus(transactionId: string) {
     throw new Error(data?.message ?? 'Platega status check failed');
   }
 
-  return data as { id: string; status: string; payload?: string };
+  return data as PlategaTransactionStatus;
 }
 
 export function verifyPlategaWebhook(request: Request): boolean {
@@ -138,3 +147,4 @@ export function parsePlategaCallback(rawBody: string): PlategaCallbackPayload | 
     return null;
   }
 }
+

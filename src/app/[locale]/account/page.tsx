@@ -50,11 +50,26 @@ export default function AccountPage() {
   }, [user, loading, router, locale]);
 
   useEffect(() => {
-    if (searchParams.get('topup') === 'success') {
-      toast({ title: t.topUpPending });
-      refreshProfile();
-    }
-  }, [searchParams, toast, t.topUpPending, refreshProfile]);
+    if (searchParams.get('topup') !== 'success') return;
+
+    const confirmTopup = async () => {
+      try {
+        const res = await fetch('/api/wallet/topup/confirm', { method: 'POST' });
+        const data = await res.json();
+        if (data.confirmed > 0) {
+          toast({ title: t.topUpSuccess });
+        } else {
+          toast({ title: t.topUpPending });
+        }
+      } catch {
+        toast({ title: t.topUpPending });
+      } finally {
+        refreshProfile();
+      }
+    };
+
+    confirmTopup();
+  }, [searchParams, toast, t.topUpPending, t.topUpSuccess, refreshProfile]);
 
   useEffect(() => {
     if (!user) return;

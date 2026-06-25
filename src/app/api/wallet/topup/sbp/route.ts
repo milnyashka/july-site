@@ -2,7 +2,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { createPlategaTransaction, PLATEGA_PAYMENT_METHOD } from '@/lib/platega';
 import { NextResponse } from 'next/server';
 
-const MIN_RUB = 50;
+const MIN_RUB = 25;
 const MAX_RUB = 10000;
 
 export async function POST(request: Request) {
@@ -57,12 +57,20 @@ export async function POST(request: Request) {
       .eq('id', topup.id);
 
     return NextResponse.json({ url: tx.redirect, topupId: topup.id });
-  } catch {
+  } catch (err) {
+    console.error('[sbp/topup] Platega error:', err);
+
     await service
       .from('topup_requests')
       .update({ status: 'failed' })
       .eq('id', topup.id);
 
-    return NextResponse.json({ error: 'payment_not_configured' }, { status: 503 });
+    const missingEnv =
+      !process.env.PLATEGA_MERCHANT_ID || !process.env.PLATEGA_API_KEY;
+
+    return NextResponse.json(
+      { error: missingEnv ? 'payment_not_configured' : 'payment_failed' },
+      { status: 503 }
+    );
   }
 }

@@ -1,6 +1,10 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
-import { createCryptomusInvoice } from '@/lib/cryptomus';
+import { createPlategaTransaction, PLATEGA_PAYMENT_METHOD } from '@/lib/platega';
+import type { Currency } from '@/lib/currency';
 import { NextResponse } from 'next/server';
+
+const MIN_USDT = 1;
+const MAX_USDT = 500;
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -10,8 +14,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
 
-  const { amount } = await request.json();
+  const { amount, locale } = await request.json();
   const parsed = parseFloat(amount);
+
+  if (!parsed || parsed < MIN_USDT || parsed > MAX_USDT) {
+    return NextResponse.json({ error: 'invalid_amount' }, { status: 400 });
+  }
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -19,15 +27,12 @@ export async function POST(request: Request) {
     .eq('id', user.id)
     .single();
 
-  const currency = profile?.currency === 'rub' ? 'rub' : 'usd';
-  const min = currency === 'rub' ? 50 : 1;
-  const max = currency === 'rub' ? 10000 : 500;
-
-  if (!parsed || parsed < min || parsed > max) {
-    return NextResponse.json({ error: 'invalid_amount' }, { status: 400 });
-  }
+  const profileCurrency: Currency =
+    profile?.currency === 'rub' ? 'rub' : 'usd';
 
   const service = createServiceClient();
+
+  // amount в topup_requests для crypto = сумма в USDT (для сверки с Platega)
   const { data: topup, error: topupError } = await service
     .from('topup_requests')
     .insert({
@@ -45,26 +50,42 @@ export async function POST(request: Request) {
 
   try {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
-    const invoice = await createCryptomusInvoice({
-      amount: parsed.toFixed(2),
-      orderId: topup.id,
-      returnUrl: `${siteUrl}/en/account?topup=success`,
-      successUrl: `${siteUrl}/en/account?topup=success`,
-      callbackUrl: `${siteUrl}/api/webhooks/cryptomus`,
+    const lang = locale === 'en' ? 'en' : 'ru';
+
+    const tx = await createPlategaTransaction({
+      amount: parsed,
+      currency: 'USDT',
+      description: `Пополнение ${parsed} USDT`,
+      returnUrl: `${siteUrl}/${lang}/account?topup=success`,
+      failedUrl: `${siteUrl}/${lang}/account?topup=failed`,
+      payload: topup.id,
+      paymentMethod: PLATEGA_PAYMENT_METHOD.CRYPTO,
     });
 
     await service
       .from('topup_requests')
-      .update({ external_id: invoice.uuid })
+      .update({ external_id: tx.transactionId })
       .eq('id', topup.id);
 
-    return NextResponse.json({ url: invoice.url });
-  } catch {
+    return NextResponse.json({
+      url: tx.redirect,
+      usdt: parsed,
+      creditCurrency: profileCurrency,
+    });
+  } catch (err) {
+    console.error('[crypto/topup] Platega error:', err);
+
     await service
       .from('topup_requests')
       .update({ status: 'failed' })
       .eq('id', topup.id);
 
-    return NextResponse.json({ error: 'payment_not_configured' }, { status: 503 });
+    const missingEnv =
+      !process.env.PLATEGA_MERCHANT_ID || !process.env.PLATEGA_API_KEY;
+
+    return NextResponse.json(
+      { error: missingEnv ? 'payment_not_configured' : 'payment_failed' },
+      { status: 503 }
+    );
   }
 }

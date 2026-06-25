@@ -24,8 +24,10 @@ export default function TopUpPage() {
   const [selectedMethod, setSelectedMethod] = useState<'crypto' | 'cryptobot' | 'sbp' | null>(null);
   const [loadingAmount, setLoadingAmount] = useState<number | null>(null);
 
-  // Fixed amounts in RUB as requested
-  const topupAmounts = [50, 100, 250, 500, 1000, 2500, 5000]; // RUB as requested
+  const rubTopupAmounts = [25, 50, 100, 250, 500, 1000, 2500];
+  const cryptoTopupAmounts = [1, 5, 10, 15, 25, 50, 100];
+  const topupAmounts =
+    selectedMethod === 'crypto' ? cryptoTopupAmounts : rubTopupAmounts;
 
   useEffect(() => {
     if (!loading && !user) {
@@ -38,7 +40,7 @@ export default function TopUpPage() {
     const res = await fetch('/api/wallet/topup/crypto', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amount }),
+      body: JSON.stringify({ amount, locale }),
     });
     const data = await res.json();
 
@@ -177,7 +179,10 @@ export default function TopUpPage() {
       {selectedMethod && (
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <div className="text-lg font-semibold">{t.selectAmount} (₽)</div>
+            <div className="text-lg font-semibold">
+              {t.selectAmount}
+              {selectedMethod === 'crypto' ? ' ($)' : ' (₽)'}
+            </div>
             <Button
               variant="ghost"
               size="sm"
@@ -201,6 +206,8 @@ export default function TopUpPage() {
               >
                 {loadingAmount === amount ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
+                ) : selectedMethod === 'crypto' ? (
+                  `$${amount}`
                 ) : (
                   `${amount} ₽`
                 )}
