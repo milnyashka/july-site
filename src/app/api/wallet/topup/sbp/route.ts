@@ -1,5 +1,9 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { createPlategaTransaction, PLATEGA_PAYMENT_METHOD } from '@/lib/platega';
 import { NextResponse } from 'next/server';
+
+const MIN_RUB = 50;
+const MAX_RUB = 10000;
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -9,10 +13,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
 
-  const { amount } = await request.json();
+  const { amount, locale } = await request.json();
   const parsed = parseFloat(amount);
 
-  if (!parsed || parsed <= 0) {
+  if (!parsed || parsed < MIN_RUB || parsed > MAX_RUB) {
     return NextResponse.json({ error: 'invalid_amount' }, { status: 400 });
   }
 
@@ -33,9 +37,32 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'server_error' }, { status: 500 });
   }
 
-  return NextResponse.json({ 
-    success: true, 
-    topupId: topup.id,
-    message: 'Заявка на пополнение через СБП создана'
-  });
+  try {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
+    const lang = locale === 'en' ? 'en' : 'ru';
+
+    const tx = await createPlategaTransaction({
+      amount: parsed,
+      currency: 'RUB',
+      description: `Пополнение баланса ${parsed} ₽`,
+      returnUrl: `${siteUrl}/${lang}/account?topup=success`,
+      failedUrl: `${siteUrl}/${lang}/account?topup=failed`,
+      payload: topup.id,
+      paymentMethod: PLATEGA_PAYMENT_METHOD.SBP_QR,
+    });
+
+    await service
+      .from('topup_requests')
+      .update({ external_id: tx.transactionId })
+      .eq('id', topup.id);
+
+    return NextResponse.json({ url: tx.redirect, topupId: topup.id });
+  } catch {
+    await service
+      .from('topup_requests')
+      .update({ status: 'failed' })
+      .eq('id', topup.id);
+
+    return NextResponse.json({ error: 'payment_not_configured' }, { status: 503 });
+  }
 }

@@ -43,7 +43,7 @@ create table if not exists public.topup_requests (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles (id) on delete cascade,
   amount numeric(10, 2) not null,
-  method text not null check (method in ('crypto', 'card')),
+  method text not null check (method in ('crypto', 'card', 'sbp', 'cryptobot')),
   status text not null default 'pending' check (status in ('pending', 'paid', 'failed', 'expired')),
   external_id text,
   created_at timestamptz not null default now()

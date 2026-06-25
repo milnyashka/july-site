@@ -80,22 +80,20 @@ export default function TopUpPage() {
     const res = await fetch('/api/wallet/topup/sbp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amount }),
+      body: JSON.stringify({ amount, locale }),
     });
     const data = await res.json();
 
     if (!res.ok) {
-      toast({ title: t.topUpFailed, variant: 'destructive' });
-      throw new Error('failed');
+      toast({
+        title: t.topUpFailed,
+        description: data.error === 'payment_not_configured' ? t.notConfigured : undefined,
+        variant: 'destructive',
+      });
+      throw new Error(data.error || 'failed');
     }
 
-    const message = `Хочу пополнить ${amount} ₽ через СБП. Email: ${profile?.email ?? ''}. Topup ID: ${data.topupId ?? ''}`;
-    window.open(`${supportLinks.telegram}?text=${encodeURIComponent(message)}`, '_blank');
-
-    toast({ 
-      title: 'Заявка на СБП создана', 
-      description: 'Напиши в поддержку — пришлём QR-код или ссылку для оплаты' 
-    });
+    window.location.href = data.url;
   };
 
   const handleAmount = async (amount: number) => {
@@ -211,7 +209,9 @@ export default function TopUpPage() {
           </div>
 
           <p className="mt-3 text-xs text-muted-foreground text-center">
-            После выбора суммы вас перенаправит или откроется чат с поддержкой для подтверждения.
+            {selectedMethod === 'cryptobot'
+              ? 'После выбора суммы откроется чат с поддержкой для подтверждения.'
+              : 'После выбора суммы вас перенаправит на страницу оплаты.'}
           </p>
         </div>
       )}
