@@ -63,7 +63,7 @@ export default function ResellerPage() {
       <div className="flex justify-center">
         {getVisibleGames().map((game) => (
           <div key={game.id} className="w-full max-w-md">
-            <GameProductCard game={game} />
+            <GameProductCard game={game} productsBasePath="/reseller/products" />
           </div>
         ))}
       </div>

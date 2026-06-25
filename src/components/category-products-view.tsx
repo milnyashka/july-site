@@ -6,8 +6,6 @@ import { ProductCard } from '@/components/product-card';
 import { Button } from '@/components/ui/button';
 import type { GameCategoryId, GameId } from '@/lib/game-catalog';
 import { getCategoryProducts } from '@/lib/game-catalog';
-import { isReseller, resolveAccountRole } from '@/lib/roles';
-import { useAuth } from '@/components/auth-provider';
 import { useI18n } from '@/i18n/I18nProvider';
 import { localizedPath } from '@/i18n/localized-path';
 import { supportLinks } from '@/lib/support-links';
@@ -15,27 +13,36 @@ import { supportLinks } from '@/lib/support-links';
 interface CategoryProductsViewProps {
   gameId: GameId;
   categoryId: GameCategoryId;
+  reseller?: boolean;
+  backHref?: string;
+  backLabel?: string;
 }
 
-export function CategoryProductsView({ gameId, categoryId }: CategoryProductsViewProps) {
+export function CategoryProductsView({
+  gameId,
+  categoryId,
+  reseller = false,
+  backHref,
+  backLabel,
+}: CategoryProductsViewProps) {
   const { locale, dict } = useI18n();
   const t = dict.gameCatalog;
-  const { user, profile } = useAuth();
 
   const gameDict = t.games[gameId];
   const categoryLabel =
     categoryId === 'bypass-hax' ? t.bypassHax : t.accounts;
   const items = getCategoryProducts(gameId, categoryId);
-  const reseller = isReseller(resolveAccountRole(profile?.role, user));
+  const backLink = backHref ?? localizedPath(locale, '/products');
+  const backText = backLabel ?? t.backToGames;
 
   return (
     <div className="container py-12 md:py-20">
       <Link
-        href={localizedPath(locale, '/products')}
+        href={backLink}
         className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6"
       >
         <ArrowLeft className="mr-1 h-4 w-4" />
-        {t.backToGames}
+        {backText}
       </Link>
 
       <div className="mb-10">

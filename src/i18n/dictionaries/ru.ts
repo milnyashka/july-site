@@ -170,6 +170,7 @@ export const ru = {
   gameCatalog: {
     pickCategory: 'Выбери категорию',
     backToGames: 'Назад к играм',
+    backToReseller: 'Назад к Reseller',
     categoryDescription: 'Товары {game} — {category}.',
     bypassHax: 'Bypass & Hax',
     accounts: 'Accounts',

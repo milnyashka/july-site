@@ -94,7 +94,8 @@ create trigger on_auth_user_created
 create or replace function public.purchase_plan(
   p_user_id uuid,
   p_plan_id text,
-  p_currency text default 'usd'
+  p_currency text default 'usd',
+  p_reseller_pricing boolean default false
 )
 returns json
 language plpgsql
@@ -126,7 +127,7 @@ begin
     return json_build_object('error', 'no_profile');
   end if;
 
-  if v_role = 'reseller' then
+  if p_reseller_pricing and v_role = 'reseller' then
     v_price := round(v_price * 0.5, 2);
   end if;
 

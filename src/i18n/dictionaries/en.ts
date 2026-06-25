@@ -170,6 +170,7 @@ export const en = {
   gameCatalog: {
     pickCategory: 'Pick a category',
     backToGames: 'Back to games',
+    backToReseller: 'Back to Reseller',
     categoryDescription: '{game} products — {category}.',
     bypassHax: 'Bypass & Hax',
     accounts: 'Accounts',

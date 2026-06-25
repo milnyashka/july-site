@@ -12,9 +12,13 @@ import { cn } from '@/lib/utils';
 
 interface GameProductCardProps {
   game: GameCatalogItem;
+  productsBasePath?: string;
 }
 
-export function GameProductCard({ game }: GameProductCardProps) {
+export function GameProductCard({
+  game,
+  productsBasePath = '/products',
+}: GameProductCardProps) {
   const { locale, dict } = useI18n();
   const t = dict.gameCatalog;
   const pc = dict.productCard;
@@ -58,7 +62,7 @@ export function GameProductCard({ game }: GameProductCardProps) {
           return (
             <Link
               key={opt.id}
-              href={localizedPath(locale, `/products/${game.id}/${opt.id}`)}
+              href={localizedPath(locale, `${productsBasePath}/${game.id}/${opt.id}`)}
               className={cn(
                 'group rounded-lg border px-4 py-3 flex items-center justify-between transition',
                 'hover:border-primary/60 hover:bg-primary/5 bg-muted/20'

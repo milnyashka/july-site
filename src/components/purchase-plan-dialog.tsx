@@ -60,7 +60,7 @@ export function PurchasePlanDialog({ open, onOpenChange, reseller }: PurchasePla
       const res = await fetch('/api/wallet/purchase', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planId: selectedId }),
+        body: JSON.stringify({ planId: selectedId, resellerPricing: !!reseller }),
       });
 
       const data = await res.json();

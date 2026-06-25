@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
 
-  const { planId } = await request.json();
+  const { planId, resellerPricing } = await request.json();
   if (!planId || typeof planId !== 'string' || !isValidPlanId(planId)) {
     return NextResponse.json({ error: 'invalid_plan' }, { status: 400 });
   }
@@ -27,6 +27,7 @@ export async function POST(request: Request) {
     p_user_id: user.id,
     p_plan_id: planId,
     p_currency: currency,
+    p_reseller_pricing: resellerPricing === true,
   });
 
   if (error) {
