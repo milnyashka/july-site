@@ -434,6 +434,10 @@ export const en = {
         name: 'July Bypass',
         description: 'July Bypass build — main package. Active license required.',
       },
+      {
+        name: 'Jule Hack',
+        description: 'Jule Hack build — main package. Active license required.',
+      },
     ],
   },
   marketplace: {

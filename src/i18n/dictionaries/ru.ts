@@ -434,6 +434,10 @@ export const ru = {
         name: 'July Bypass',
         description: 'Сборка July Bypass — основной файл. Нужна активная лицензия.',
       },
+      {
+        name: 'Jule Hack',
+        description: 'Сборка Jule Hack — основной файл. Нужна активная лицензия.',
+      },
     ],
   },
   marketplace: {

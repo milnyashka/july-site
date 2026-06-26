@@ -55,4 +55,15 @@ export const downloads: DownloadItem[] = [
     url: 'https://github.com/milnyashka/Jul-W-b/releases/download/v1.0/Jule-Bypass-Fixed.zip',
     requiresKey: true,
   },
+  {
+    id: 'jule-hack',
+    name: 'Jule Hack',
+    fileName: 'Jule-Hack.1.zip',
+    description: 'Jule Hack build — main package. Active license required.',
+    version: '1.0',
+    size: 'ZIP',
+    platform: 'Windows',
+    url: 'https://github.com/milnyashka/Jul-W-b/releases/download/v1.0/Jule-Hack.1.zip',
+    requiresKey: true,
+  },
 ];
