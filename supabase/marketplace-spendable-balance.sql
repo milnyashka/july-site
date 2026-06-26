@@ -281,7 +281,7 @@ begin
   values (
     v_listing.id, p_buyer_id, v_listing.seller_id, v_title,
     v_listing.price, v_listing.currency, v_fee, v_payout, v_listing.delivery_content,
-    v_buyer_charge, v_buyer_currency, 'pending_review'
+    v_buyer_charge, v_buyer_currency, 'open'
   )
   returning id into v_purchase_id;
 
@@ -291,12 +291,13 @@ begin
   return json_build_object(
     'success', true,
     'purchase_id', v_purchase_id,
-    'status', 'pending_review',
+    'status', 'open',
     'title', v_title,
     'price', v_listing.price,
     'listing_currency', v_listing.currency,
     'buyer_paid', v_buyer_charge,
-    'buyer_currency', v_buyer_currency
+    'buyer_currency', v_buyer_currency,
+    'delivery_content', v_listing.delivery_content
   );
 end;
 $$;

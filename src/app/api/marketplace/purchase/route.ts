@@ -78,6 +78,8 @@ export async function POST(request: Request) {
     title: data.title,
     price: data.price,
     deliveryContent:
-      status === 'open' || status === 'completed' ? data.delivery_content : null,
+      status === 'open' || status === 'completed'
+        ? (data.delivery_content ?? null)
+        : null,
   });
 }

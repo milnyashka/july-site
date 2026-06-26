@@ -25,9 +25,14 @@ export default function TopUpPage() {
   const [loadingAmount, setLoadingAmount] = useState<number | null>(null);
 
   const rubTopupAmounts = [25, 50, 100, 250, 500, 1000, 2500];
+  const sbpTopupAmounts = [10, ...rubTopupAmounts];
   const cryptoTopupAmounts = [1, 5, 10, 15, 25, 50, 100];
   const topupAmounts =
-    selectedMethod === 'crypto' ? cryptoTopupAmounts : rubTopupAmounts;
+    selectedMethod === 'crypto'
+      ? cryptoTopupAmounts
+      : selectedMethod === 'sbp'
+        ? sbpTopupAmounts
+        : rubTopupAmounts;
 
   useEffect(() => {
     if (!loading && !user) {

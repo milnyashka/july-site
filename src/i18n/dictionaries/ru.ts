@@ -23,7 +23,7 @@ export const ru = {
   },
   footer: {
     description:
-      'July — это маркет, где можно найти любой товар, инструменты, аккаунты и прочее. Мгновенная автовыдача и живая поддержка 24/7.',
+      'July — магазин игровых продуктов с мгновенной автовыдачей и живой поддержкой 24/7.',
     supportContact: 'Поддержка и контакты',
     supportedProducts: 'Продукты',
     rights: 'Все права защищены.',
@@ -88,7 +88,7 @@ export const ru = {
       {
         title: 'Выбери товар',
         description:
-          'Найди нужный товар в маркете: инструменты, аккаунты, лицензии и многое другое.',
+          'Выбери нужный товар в каталоге: инструменты, аккаунты, лицензии и многое другое.',
       },
       {
         title: 'Оплати',
@@ -106,7 +106,7 @@ export const ru = {
           'При необходимости установи зависимости. Круглосуточный мониторинг и оперативная поддержка 24/7.',
       },
     ],
-    ctaProducts: 'Перейти в маркет',
+    ctaProducts: 'Смотреть продукты',
     ctaDownload: 'Скачать',
     ctaSupport: 'Нужна помощь?',
   },
@@ -311,7 +311,7 @@ export const ru = {
     tierDiscount: '−{percent}% на Продукты',
     tierNoDiscount: 'Без скидки',
     tierSpent: 'Потрачено на Продукты: ${amount}',
-    tierProductsOnly: 'Статус и скидка только во вкладке «Продукты». Маркет не учитывается.',
+    tierProductsOnly: 'Статус и скидка действуют на покупки в разделе «Продукты».',
     tierProgress: 'До {next}: ${amount}',
     tierMax: 'Максимальный статус — Золото',
     tiers: {
@@ -330,7 +330,7 @@ export const ru = {
     usernameTitle: 'Никнейм',
     usernameLabel: 'Публичное имя',
     usernamePlaceholder: 'TraderPro',
-    usernameHint: 'Так тебя видят на маркете и в чатах. Email никому не показываем.',
+    usernameHint: 'Твоё публичное имя на сайте. Email никому не показываем.',
     usernameRules: 'Только латиница (A–Z), от {min} до {max} символов, без повторов.',
     usernameSave: 'Сохранить ник',
     usernameSaved: 'Никнейм сохранён',
@@ -543,9 +543,18 @@ export const ru = {
     sellerActiveListings: 'Активные лоты',
     noActiveListings: 'Активных лотов нет',
     anonymousBuyer: 'Покупатель',
+    reviewDealProduct: 'Товар',
     leaveReview: 'Оставить отзыв',
     reviewPlaceholder: 'Комментарий (необязательно)',
     submitReview: 'Отправить отзыв',
+    editReview: 'Изменить отзыв',
+    editReviewTitle: 'Редактирование отзыва',
+    saveReview: 'Сохранить',
+    cancelReviewEdit: 'Отмена',
+    reviewEditHint: 'Можно менять в течение 30 дней после публикации.',
+    reviewEdited: 'Отзыв изменён',
+    reviewUpdated: 'Отзыв обновлён',
+    reviewEditExpired: 'Срок редактирования истёк (30 дней).',
     reviewSubmitted: 'Отзыв отправлен',
     reviewFailed: 'Не удалось отправить отзыв',
     openDispute: 'Проблема со сделкой',

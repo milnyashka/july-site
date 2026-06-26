@@ -68,8 +68,8 @@ export function MarketplaceBuyDialog({ listing, open, onOpenChange, onPurchased 
         throw new Error(data.error);
       }
 
-      if (data.deliveryContent) {
-        setDelivery(data.deliveryContent);
+      if (data.deliveryContent || data.status === 'open' || data.status === 'completed') {
+        if (data.deliveryContent) setDelivery(data.deliveryContent);
         toast({ title: m.purchaseSuccess });
       } else if (data.status === 'pending_review') {
         setPendingReview(true);

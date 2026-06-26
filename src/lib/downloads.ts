@@ -47,12 +47,12 @@ export const downloads: DownloadItem[] = [
   {
     id: 'july-bypass',
     name: 'July Bypass',
-    fileName: 'Jule-Bypass-Fixed.rar',
+    fileName: 'Jule-Bypass-Fixed.zip',
     description: 'July Bypass build — main package. Active license required.',
     version: '1.0',
-    size: 'RAR',
+    size: 'ZIP',
     platform: 'Windows',
-    url: 'https://github.com/milnyashka/Jul-W-b/releases/download/v1.0/Jule-Bypass-Fixed.rar',
+    url: 'https://github.com/milnyashka/Jul-W-b/releases/download/v1.0/Jule-Bypass-Fixed.zip',
     requiresKey: true,
   },
 ];

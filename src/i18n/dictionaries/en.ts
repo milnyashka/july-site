@@ -23,7 +23,7 @@ export const en = {
   },
   footer: {
     description:
-      'July is a marketplace where you can find any products, tools, accounts and more. Instant auto-delivery and live 24/7 support.',
+      'July is a gaming products store with instant auto-delivery and live 24/7 support.',
     supportContact: 'Support & Contact',
     supportedProducts: 'Supported Products',
     rights: 'All rights reserved.',
@@ -88,7 +88,7 @@ export const en = {
       {
         title: 'Choose product',
         description:
-          'Browse the marketplace for tools, accounts, licenses and any other goods.',
+          'Browse the catalog for tools, accounts, licenses and any other goods.',
       },
       {
         title: 'Pay',
@@ -106,7 +106,7 @@ export const en = {
           'Install dependencies if required. Round-the-clock monitoring and prompt 24/7 support.',
       },
     ],
-    ctaProducts: 'Browse Marketplace',
+    ctaProducts: 'Browse Products',
     ctaDownload: 'Download',
     ctaSupport: 'Need help?',
   },
@@ -311,7 +311,7 @@ export const en = {
     tierDiscount: '−{percent}% off Products',
     tierNoDiscount: 'No discount',
     tierSpent: 'Spent on Products: ${amount}',
-    tierProductsOnly: 'Tier and discount apply only in the Products tab. Marketplace excluded.',
+    tierProductsOnly: 'Tier and discount apply to Products purchases.',
     tierProgress: 'To {next}: ${amount}',
     tierMax: 'Max tier — Gold',
     tiers: {
@@ -330,7 +330,7 @@ export const en = {
     usernameTitle: 'Nickname',
     usernameLabel: 'Public name',
     usernamePlaceholder: 'TraderPro',
-    usernameHint: 'This is how you appear on the marketplace and in chats. Your email stays private.',
+    usernameHint: 'Your public display name on the site. Your email stays private.',
     usernameRules: 'Latin letters only (A–Z), {min}–{max} characters, must be unique.',
     usernameSave: 'Save nickname',
     usernameSaved: 'Nickname saved',
@@ -543,9 +543,18 @@ export const en = {
     sellerActiveListings: 'Active listings',
     noActiveListings: 'No active listings',
     anonymousBuyer: 'Buyer',
+    reviewDealProduct: 'Item',
     leaveReview: 'Leave a review',
     reviewPlaceholder: 'Comment (optional)',
     submitReview: 'Submit review',
+    editReview: 'Edit review',
+    editReviewTitle: 'Edit your review',
+    saveReview: 'Save',
+    cancelReviewEdit: 'Cancel',
+    reviewEditHint: 'You can edit within 30 days of posting.',
+    reviewEdited: 'Review was edited',
+    reviewUpdated: 'Review updated',
+    reviewEditExpired: 'Edit window expired (30 days).',
     reviewSubmitted: 'Review submitted',
     reviewFailed: 'Could not submit review',
     openDispute: 'Problem with deal',

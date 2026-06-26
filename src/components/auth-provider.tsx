@@ -64,6 +64,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
   const lastSeenTouchRef = useRef(0);
   const initialLoadDoneRef = useRef(false);
+  const profileRef = useRef<Profile | null>(null);
+
+  useEffect(() => {
+    profileRef.current = profile;
+  }, [profile]);
 
   const refreshProfile = useCallback(
     async (options?: RefreshProfileOptions) => {
@@ -81,15 +86,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const run = (async () => {
+        try {
         const {
           data: { session },
         } = await supabase.auth.getSession();
         const currentUser = session?.user ?? null;
-        setUser(currentUser);
+        setUser((prev) => {
+          if (!currentUser) return null;
+          if (prev?.id === currentUser.id) return prev;
+          return currentUser;
+        });
 
         if (!currentUser) {
           setProfile(null);
-          setLoading(false);
           lastRefreshAtRef.current = Date.now();
           return;
         }
@@ -160,24 +169,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (!data) {
           setProfile(null);
-          setLoading(false);
           lastRefreshAtRef.current = Date.now();
           return;
         }
 
         const currency = (data.currency === 'rub' ? 'rub' : 'usd') as Currency;
 
+        const balance = Number(data.balance);
         let lockedBalance = 0;
-        let availableBalance = Number(data.balance);
+        let availableBalance = balance;
 
         if (!walletRes.error && walletRes.data) {
           const w = walletRes.data as { balance?: number; locked?: number; available?: number };
           lockedBalance = Number(w.locked ?? 0);
           availableBalance = Number(
-            w.available ?? computeAvailableBalance(Number(data.balance), lockedBalance)
+            w.available ?? computeAvailableBalance(balance, lockedBalance)
           );
         } else {
-          availableBalance = computeAvailableBalance(Number(data.balance), 0);
+          availableBalance = computeAvailableBalance(balance, 0);
         }
 
         let totalSpentUsd = tierCacheRef.current.totalSpentUsd;
@@ -190,12 +199,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .eq('user_id', currentUser.id);
 
           let purchaseRows: { amount: number; amount_usd?: number | null }[] = [];
-          if (purchasesRes.error?.message?.includes('amount_usd')) {
+          if (purchasesRes.error) {
             const fallback = await supabase
               .from('purchases')
-              .select('amount')
+              .select('amount, amount_usd')
               .eq('user_id', currentUser.id);
-            purchaseRows = fallback.data ?? [];
+            if (!fallback.error) {
+              purchaseRows = fallback.data ?? [];
+            } else {
+              const minimal = await supabase
+                .from('purchases')
+                .select('amount')
+                .eq('user_id', currentUser.id);
+              purchaseRows = minimal.data ?? [];
+            }
           } else {
             purchaseRows = purchasesRes.data ?? [];
           }
@@ -205,7 +222,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           tierCacheRef.current = { totalSpentUsd, tier };
         }
 
-        setProfile({
+        const roles = resolveAccountRoles(data.roles, data.role, currentUser);
+        const nextProfile: Profile = {
           balance: Number(data.balance),
           lockedBalance,
           availableBalance,
@@ -213,16 +231,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           username: data.username ? String(data.username) : null,
           currency,
           avatarUrl: data.avatar_url ?? null,
-          roles: resolveAccountRoles(data.roles, data.role, currentUser),
-          role: getPrimaryRole(resolveAccountRoles(data.roles, data.role, currentUser)),
+          roles,
+          role: getPrimaryRole(roles),
           totalSpentUsd,
           tier,
           accountFrozen: Boolean(data.account_frozen),
           balanceFrozen: Boolean(data.balance_frozen),
           accountFreezeReason: data.account_freeze_reason ?? null,
-        });
+        };
 
-        setLoading(false);
+        const prev = profileRef.current;
+        const unchanged =
+          prev &&
+          prev.balance === nextProfile.balance &&
+          prev.lockedBalance === nextProfile.lockedBalance &&
+          prev.availableBalance === nextProfile.availableBalance &&
+          prev.email === nextProfile.email &&
+          prev.username === nextProfile.username &&
+          prev.currency === nextProfile.currency &&
+          prev.avatarUrl === nextProfile.avatarUrl &&
+          prev.role === nextProfile.role &&
+          prev.totalSpentUsd === nextProfile.totalSpentUsd &&
+          prev.tier === nextProfile.tier &&
+          prev.accountFrozen === nextProfile.accountFrozen &&
+          prev.balanceFrozen === nextProfile.balanceFrozen &&
+          prev.accountFreezeReason === nextProfile.accountFreezeReason &&
+          prev.roles.length === nextProfile.roles.length &&
+          prev.roles.every((r, i) => r === nextProfile.roles[i]);
+
+        if (!unchanged) {
+          setProfile(nextProfile);
+        }
 
         const touchNow = Date.now();
         if (touchNow - lastSeenTouchRef.current > 5 * 60_000) {
@@ -231,6 +270,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         lastRefreshAtRef.current = touchNow;
+        } finally {
+          setLoading(false);
+        }
       })();
 
       refreshInFlightRef.current = run;
@@ -249,7 +291,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    refreshProfile({ force: true }).finally(() => {
+    refreshProfile({ force: true, full: true }).finally(() => {
       initialLoadDoneRef.current = true;
     });
 

@@ -16,7 +16,7 @@ export function WalletBadge() {
   const { locale, dict } = useI18n();
   const t = dict.wallet;
 
-  if (loading) {
+  if (loading && !user) {
     return (
       <div className="flex items-center gap-2">
         <div className="h-9 w-20 rounded-md bg-muted animate-pulse" />

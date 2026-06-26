@@ -1,4 +1,4 @@
-import { mapListingRow, mapPurchaseRow } from '@/lib/marketplace';
+import { canEditReview, mapListingRow, mapPurchaseRow } from '@/lib/marketplace';
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
@@ -37,7 +37,10 @@ export async function GET() {
         .eq('seller_id', user.id)
         .is('released_at', null)
         .order('release_at', { ascending: true }),
-      supabase.from('marketplace_reviews').select('purchase_id').eq('reviewer_id', user.id),
+      supabase
+        .from('marketplace_reviews')
+        .select('id, purchase_id, rating, comment, created_at, updated_at')
+        .eq('reviewer_id', user.id),
       supabase.from('marketplace_disputes').select('purchase_id').eq('buyer_id', user.id),
     ]);
 
@@ -45,7 +48,19 @@ export async function GET() {
     return NextResponse.json({ error: 'server_error' }, { status: 500 });
   }
 
-  const reviewSet = new Set((reviewsRes.data ?? []).map((r) => r.purchase_id));
+  const reviewMap = new Map(
+    (reviewsRes.data ?? []).map((r) => [
+      r.purchase_id,
+      {
+        id: r.id,
+        rating: r.rating,
+        comment: r.comment ?? '',
+        createdAt: r.created_at,
+        updatedAt: r.updated_at ?? null,
+        canEdit: canEditReview(String(r.created_at)),
+      },
+    ])
+  );
   const disputeSet = new Set((disputesRes.data ?? []).map((d) => d.purchase_id));
 
   const holdMap = new Map(
@@ -60,8 +75,9 @@ export async function GET() {
           ? row.delivery_content
           : '',
       hold_release_at: holdMap.get(row.id as string) ?? null,
-      has_review: reviewSet.has(row.id as string),
+      has_review: reviewMap.has(row.id as string),
       has_dispute: disputeSet.has(row.id as string),
+      review: reviewMap.get(row.id as string) ?? null,
     });
 
   const purchaseTitles = new Map(

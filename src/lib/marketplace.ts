@@ -4,6 +4,15 @@ import { publicDisplayName } from '@/lib/username';
 /** Комиссия площадки с P2P-продаж */
 export const MARKETPLACE_COMMISSION = 0.10;
 
+/** Сколько дней можно менять свой отзыв после публикации */
+export const REVIEW_EDIT_WINDOW_DAYS = 30;
+
+export function canEditReview(createdAt: string, now = Date.now()): boolean {
+  const created = new Date(createdAt).getTime();
+  if (Number.isNaN(created)) return false;
+  return now - created <= REVIEW_EDIT_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+}
+
 export type MarketplaceListingStatus = 'draft' | 'active' | 'sold' | 'cancelled';
 
 export type MarketplacePurchaseStatus =
@@ -71,6 +80,16 @@ export type MarketplacePurchase = {
   holdReleaseAt?: string | null;
   hasReview?: boolean;
   hasDispute?: boolean;
+  review?: MarketplacePurchaseReview;
+};
+
+export type MarketplacePurchaseReview = {
+  id: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
+  updatedAt: string | null;
+  canEdit: boolean;
 };
 
 export type MarketplaceReview = {
@@ -82,6 +101,10 @@ export type MarketplaceReview = {
   comment: string;
   createdAt: string;
   reviewerLabel?: string;
+  dealTitle?: string;
+  dealPrice?: number;
+  dealCurrency?: 'rub' | 'usd';
+  dealCategory?: MarketplaceCategory;
 };
 
 export type MarketplaceSellerProfile = {
@@ -254,10 +277,29 @@ export function mapPurchaseRow(row: Record<string, unknown>): MarketplacePurchas
     holdReleaseAt: row.hold_release_at ? String(row.hold_release_at) : null,
     hasReview: Boolean(row.has_review),
     hasDispute: Boolean(row.has_dispute),
+    review: mapPurchaseReview(row.review),
+  };
+}
+
+export function mapPurchaseReview(value: unknown): MarketplacePurchaseReview | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const row = value as Record<string, unknown>;
+  if (!row.id) return undefined;
+  const createdAt = String(row.createdAt ?? row.created_at ?? '');
+  return {
+    id: String(row.id),
+    rating: Number(row.rating),
+    comment: String(row.comment ?? ''),
+    createdAt,
+    updatedAt: row.updatedAt || row.updated_at ? String(row.updatedAt ?? row.updated_at) : null,
+    canEdit: Boolean(row.canEdit ?? (createdAt ? canEditReview(createdAt) : false)),
   };
 }
 
 export function mapReviewRow(row: Record<string, unknown>): MarketplaceReview {
+  const dealCategory = row.deal_category;
+  const dealCurrency = row.deal_currency;
+
   return {
     id: String(row.id),
     purchaseId: String(row.purchase_id),
@@ -267,6 +309,17 @@ export function mapReviewRow(row: Record<string, unknown>): MarketplaceReview {
     comment: String(row.comment ?? ''),
     createdAt: String(row.created_at),
     reviewerLabel: row.reviewer_label ? String(row.reviewer_label) : undefined,
+    dealTitle: row.deal_title ? String(row.deal_title) : undefined,
+    dealPrice: row.deal_price != null ? Number(row.deal_price) : undefined,
+    dealCurrency:
+      dealCurrency === 'rub' ? 'rub' : dealCurrency === 'usd' ? 'usd' : undefined,
+    dealCategory:
+      dealCategory === 'accounts' ||
+      dealCategory === 'keys' ||
+      dealCategory === 'tools' ||
+      dealCategory === 'other'
+        ? dealCategory
+        : undefined,
   };
 }
 

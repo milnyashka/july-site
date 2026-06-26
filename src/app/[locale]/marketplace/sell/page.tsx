@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Loader2, Trash2, Upload, Banknote } from 'lucide-react';
+import { ArrowLeft, Loader2, Trash2, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -33,7 +33,6 @@ import { useToast } from '@/hooks/use-toast';
 export default function MarketplaceSellPage() {
   const { locale, dict } = useI18n();
   const m = dict.marketplace;
-  const wd = dict.withdrawals;
   const { user, profile, loading: authLoading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
@@ -152,17 +151,9 @@ export default function MarketplaceSellPage() {
         {m.backToMarket}
       </Link>
 
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold font-headline mb-2">{m.sellTitle}</h1>
-          <p className="text-muted-foreground">{m.sellDescription}</p>
-        </div>
-        <Link href={localizedPath(locale, '/marketplace/withdraw')}>
-          <Button variant="outline">
-            <Banknote className="mr-2 h-4 w-4" />
-            {wd.title}
-          </Button>
-        </Link>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold font-headline mb-2">{m.sellTitle}</h1>
+        <p className="text-muted-foreground">{m.sellDescription}</p>
       </div>
 
       <Card className="mb-10">

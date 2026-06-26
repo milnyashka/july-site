@@ -1,13 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Wallet, KeyRound, LogOut, ArrowRight, ChevronRight, Shield, Store } from 'lucide-react';
+import { Wallet, KeyRound, LogOut, ArrowRight, ChevronRight, Shield, Store, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { isReseller, isModerator } from '@/lib/roles';
 import type { MarketplaceBalanceHold, MarketplacePurchase } from '@/lib/marketplace';
-import { AccountWithdrawalCard } from '@/components/account-withdrawal-card';
 import { MarketplaceOrderCard } from '@/components/marketplace-order-card';
 import { LicenseKeyCard } from '@/components/license-key-card';
 import { CustomerTierCard, TIER_STYLES } from '@/components/customer-tier-card';
@@ -17,8 +16,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/components/auth-provider';
 import { formatBalanceForLocale } from '@/lib/currency';
 import { ProfileAvatar } from '@/components/profile-avatar';
-
-import { createClient } from '@/lib/supabase/client';
 import { useI18n } from '@/i18n/I18nProvider';
 import { localizedPath } from '@/i18n/localized-path';
 import { useToast } from '@/hooks/use-toast';
@@ -50,16 +47,17 @@ export default function AccountPage() {
   const [marketPurchases, setMarketPurchases] = useState<MarketplacePurchase[]>([]);
   const [marketSales, setMarketSales] = useState<MarketplacePurchase[]>([]);
   const [marketHolds, setMarketHolds] = useState<MarketplaceBalanceHold[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
 
-  const reloadMarketplace = () => {
-    fetch('/api/marketplace/my')
-      .then((r) => r.json())
-      .then((data) => {
-        setMarketPurchases(data.purchases ?? []);
-        setMarketSales(data.sales ?? []);
-        setMarketHolds(data.holds ?? []);
+  const reloadMarketplace = useCallback(() => {
+    return fetch('/api/marketplace/my')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { purchases?: MarketplacePurchase[]; sales?: MarketplacePurchase[]; holds?: MarketplaceBalanceHold[] } | null) => {
+        setMarketPurchases(data?.purchases ?? []);
+        setMarketSales(data?.sales ?? []);
+        setMarketHolds(data?.holds ?? []);
       });
-  };
+  }, []);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -82,7 +80,7 @@ export default function AccountPage() {
       } catch {
         toast({ title: t.topUpPending });
       } finally {
-        refreshProfile();
+        refreshProfile({ full: true });
       }
     };
 
@@ -90,37 +88,51 @@ export default function AccountPage() {
   }, [searchParams, toast, t.topUpPending, t.topUpSuccess, refreshProfile]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) {
+      setDataLoading(false);
+      return;
+    }
 
-    const supabase = createClient();
+    let cancelled = false;
+    setDataLoading(true);
 
-    supabase
-      .from('purchases')
-      .select('license_key, plan_id, amount, created_at')
-      .order('created_at', { ascending: false })
-      .then(({ data }) => setPurchases(data ?? []));
+    const load = async () => {
+      try {
+        await fetch('/api/marketplace/release-holds', { method: 'POST' });
+        const [accountRes] = await Promise.all([
+          fetch('/api/account/data', { cache: 'no-store' }),
+          reloadMarketplace(),
+        ]);
 
-    supabase
-      .from('transactions')
-      .select('type, amount, description, created_at')
-      .order('created_at', { ascending: false })
-      .limit(10)
-      .then(({ data }) => setTransactions(data ?? []));
+        if (cancelled) return;
 
-    refreshProfile({ full: true, force: true });
+        if (accountRes.ok) {
+          const accountData = await accountRes.json();
+          setPurchases(accountData.purchases ?? []);
+          setTransactions(accountData.transactions ?? []);
+        }
+      } finally {
+        if (!cancelled) setDataLoading(false);
+      }
+    };
 
-    fetch('/api/marketplace/release-holds', { method: 'POST' }).finally(() => {
-      reloadMarketplace();
-      refreshProfile({ full: true, force: true });
-    });
-  }, [user]);
+    void load();
 
-  if (loading || !user) {
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, reloadMarketplace]);
+
+  if (loading && !user) {
     return (
       <div className="container py-20 text-center text-muted-foreground">
         {t.loading}
       </div>
     );
+  }
+
+  if (!user) {
+    return null;
   }
 
   const planLabel = (id: string) => {
@@ -240,26 +252,18 @@ export default function AccountPage() {
         </div>
       )}
 
-      <div className="mb-8">
-        <AccountWithdrawalCard
-          availableBalance={profile?.availableBalance ?? profile?.balance ?? 0}
-          totalBalance={profile?.balance ?? 0}
-          lockedBalance={profile?.lockedBalance ?? 0}
-          currency={profile?.currency ?? 'usd'}
-          onBalanceChange={() => {
-            refreshProfile();
-            reloadMarketplace();
-          }}
-        />
-      </div>
-
       <div className="space-y-8">
         <section>
           <h2 className="text-xl font-semibold font-headline mb-4 flex items-center gap-2">
             <KeyRound className="h-5 w-5" />
             {t.myKeys}
           </h2>
-          {purchases.length === 0 ? (
+          {dataLoading ? (
+            <div className="flex items-center gap-2 text-muted-foreground text-sm">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              {t.loading}
+            </div>
+          ) : purchases.length === 0 ? (
             <p className="text-muted-foreground">{t.noKeys}</p>
           ) : (
             <div className="space-y-4">
@@ -292,7 +296,12 @@ export default function AccountPage() {
               </Button>
             </Link>
           </div>
-          {marketPurchases.length === 0 ? (
+          {dataLoading ? (
+            <div className="flex items-center gap-2 text-muted-foreground text-sm">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              {t.loading}
+            </div>
+          ) : marketPurchases.length === 0 ? (
             <p className="text-muted-foreground">{m.noPurchases}</p>
           ) : (
             <div className="space-y-3">
@@ -308,7 +317,7 @@ export default function AccountPage() {
           )}
         </section>
 
-        {marketSales.length > 0 && (
+        {!dataLoading && marketSales.length > 0 && (
           <section>
             <h2 className="text-xl font-semibold font-headline mb-4 flex items-center gap-2">
               <Store className="h-5 w-5" />
@@ -329,7 +338,12 @@ export default function AccountPage() {
 
         <section>
           <h2 className="text-xl font-semibold font-headline mb-4">{t.history}</h2>
-          {transactions.length === 0 ? (
+          {dataLoading ? (
+            <div className="flex items-center gap-2 text-muted-foreground text-sm">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              {t.loading}
+            </div>
+          ) : transactions.length === 0 ? (
             <p className="text-muted-foreground">{t.noHistory}</p>
           ) : (
             <div className="space-y-2">

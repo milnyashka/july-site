@@ -3,14 +3,18 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, Loader2, Star } from 'lucide-react';
+import { ArrowLeft, Loader2, MessageCircle, MessageSquare, ShoppingBag, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { MarketplaceBuyDialog } from '@/components/marketplace-buy-dialog';
+import { MarketplaceChatDialog } from '@/components/marketplace-chat-dialog';
 import { SellerRatingBadge } from '@/components/seller-rating-badge';
 import type { MarketplaceListing, MarketplaceSellerProfile } from '@/lib/marketplace';
 import { formatMoney } from '@/lib/currency';
 import { formatLastSeen } from '@/lib/last-seen';
+import { useAuth } from '@/components/auth-provider';
 import { useI18n } from '@/i18n/I18nProvider';
 import { localizedPath } from '@/i18n/localized-path';
 
@@ -19,10 +23,17 @@ export default function SellerProfilePage() {
   const m = dict.marketplace;
   const params = useParams();
   const sellerId = String(params.id ?? '');
+  const { user } = useAuth();
 
   const [seller, setSeller] = useState<MarketplaceSellerProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [selectedListing, setSelectedListing] = useState<MarketplaceListing | null>(null);
+  const [buyOpen, setBuyOpen] = useState(false);
+  const [chatListing, setChatListing] = useState<MarketplaceListing | null>(null);
+  const [chatOpen, setChatOpen] = useState(false);
+
+  const isOwnProfile = user?.id === sellerId;
 
   useEffect(() => {
     if (!sellerId) return;
@@ -94,7 +105,7 @@ export default function SellerProfilePage() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="flex flex-wrap gap-3">
+        <CardContent className="flex flex-wrap items-center gap-3">
           <Badge variant="secondary">
             {m.completedSales}: {seller.completedSales}
           </Badge>
@@ -103,6 +114,14 @@ export default function SellerProfilePage() {
               <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
               {seller.avgRating.toFixed(1)} ({seller.reviewCount})
             </Badge>
+          )}
+          {user && (
+            <Link href={localizedPath(locale, '/marketplace/messages')} className="ml-auto">
+              <Button variant="outline" size="sm">
+                <MessageSquare className="mr-2 h-4 w-4" />
+                {m.chatInbox}
+              </Button>
+            </Link>
           )}
         </CardContent>
       </Card>
@@ -114,19 +133,48 @@ export default function SellerProfilePage() {
         <div className="space-y-3 mb-8">
           {seller.activeListings.map((listing: MarketplaceListing) => (
             <Card key={listing.id}>
-              <CardContent className="pt-4 flex justify-between items-start gap-3">
-                <div>
-                  <p className="font-medium">{listing.title}</p>
-                  <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
-                    {listing.description || m.noDescription}
-                  </p>
-                  <Badge variant="outline" className="mt-2 text-xs">
-                    {(m.categories as Record<string, string>)[listing.category]}
-                  </Badge>
+              <CardContent className="pt-4 space-y-3">
+                <div className="flex justify-between items-start gap-3">
+                  <div className="min-w-0">
+                    <p className="font-medium">{listing.title}</p>
+                    <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
+                      {listing.description || m.noDescription}
+                    </p>
+                    <Badge variant="outline" className="mt-2 text-xs">
+                      {(m.categories as Record<string, string>)[listing.category]}
+                    </Badge>
+                  </div>
+                  <span className="font-bold text-primary shrink-0">
+                    {formatMoney(listing.price, listing.currency)}
+                  </span>
                 </div>
-                <span className="font-bold text-primary shrink-0">
-                  {formatMoney(listing.price, listing.currency)}
-                </span>
+                {!isOwnProfile && (
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button
+                      size="sm"
+                      className="sm:flex-1"
+                      onClick={() => {
+                        setSelectedListing(listing);
+                        setBuyOpen(true);
+                      }}
+                    >
+                      <ShoppingBag className="mr-2 h-4 w-4" />
+                      {m.buy}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="sm:flex-1"
+                      onClick={() => {
+                        setChatListing(listing);
+                        setChatOpen(true);
+                      }}
+                    >
+                      <MessageCircle className="mr-2 h-4 w-4" />
+                      {m.chatWithSeller}
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}
@@ -141,15 +189,37 @@ export default function SellerProfilePage() {
           {seller.reviews.map((review) => (
             <Card key={review.id}>
               <CardContent className="pt-4 space-y-2">
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center gap-3">
                   <span className="text-sm font-medium">
                     {review.reviewerLabel ?? m.anonymousBuyer}
                   </span>
-                  <span className="flex items-center gap-0.5 text-amber-400 text-sm">
+                  <span className="flex items-center gap-0.5 text-amber-400 text-sm shrink-0">
                     {review.rating}
                     <Star className="h-3 w-3 fill-current" />
                   </span>
                 </div>
+                {(review.dealTitle || review.dealPrice != null) && (
+                  <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm space-y-1">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-xs text-muted-foreground">{m.reviewDealProduct}</p>
+                        {review.dealTitle && (
+                          <p className="font-medium break-words">{review.dealTitle}</p>
+                        )}
+                      </div>
+                      {review.dealPrice != null && review.dealCurrency && (
+                        <span className="font-semibold text-primary shrink-0">
+                          {formatMoney(review.dealPrice, review.dealCurrency)}
+                        </span>
+                      )}
+                    </div>
+                    {review.dealCategory && (
+                      <Badge variant="outline" className="text-xs">
+                        {(m.categories as Record<string, string>)[review.dealCategory]}
+                      </Badge>
+                    )}
+                  </div>
+                )}
                 {review.comment && (
                   <p className="text-sm text-muted-foreground">{review.comment}</p>
                 )}
@@ -163,6 +233,24 @@ export default function SellerProfilePage() {
           ))}
         </div>
       )}
+
+      <MarketplaceBuyDialog
+        listing={selectedListing}
+        open={buyOpen}
+        onOpenChange={setBuyOpen}
+        onPurchased={() => {
+          fetch(`/api/marketplace/sellers/${sellerId}?locale=${locale}`)
+            .then((r) => r.json())
+            .then((data) => setSeller(data.seller))
+            .catch(() => {});
+        }}
+      />
+
+      <MarketplaceChatDialog
+        listing={chatListing}
+        open={chatOpen}
+        onOpenChange={setChatOpen}
+      />
     </div>
   );
 }

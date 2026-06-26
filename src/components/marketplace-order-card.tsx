@@ -63,19 +63,35 @@ export function MarketplaceOrderCard({ purchase, mode, onUpdated }: Props) {
     }
   };
 
+  const openReviewForm = (existing?: MarketplacePurchase['review']) => {
+    if (existing) {
+      setRating(existing.rating);
+      setComment(existing.comment);
+    } else {
+      setRating(5);
+      setComment('');
+    }
+    setShowReview(true);
+  };
+
   const handleReview = async () => {
     setLoading(true);
     try {
+      const isEdit = Boolean(purchase.review);
       const res = await fetch('/api/marketplace/reviews', {
-        method: 'POST',
+        method: isEdit ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ purchaseId: purchase.id, rating, comment }),
       });
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast({ title: m.reviewFailed, variant: 'destructive' });
+        toast({
+          title: data.error === 'edit_expired' ? m.reviewEditExpired : m.reviewFailed,
+          variant: 'destructive',
+        });
         return;
       }
-      toast({ title: m.reviewSubmitted });
+      toast({ title: isEdit ? m.reviewUpdated : m.reviewSubmitted });
       setShowReview(false);
       onUpdated?.();
     } finally {
@@ -241,39 +257,84 @@ export function MarketplaceOrderCard({ purchase, mode, onUpdated }: Props) {
           </Button>
         )}
 
-        {mode === 'buyer' && purchase.status === 'completed' && !purchase.hasReview && (
-          <>
-            {!showReview ? (
-              <Button size="sm" variant="outline" onClick={() => setShowReview(true)}>
-                <Star className="mr-2 h-3 w-3" />
-                {m.leaveReview}
-              </Button>
-            ) : (
-              <div className="space-y-2 border rounded-lg p-3">
-                <div className="flex gap-1">
-                  {[1, 2, 3, 4, 5].map((n) => (
-                    <button
-                      key={n}
-                      type="button"
-                      onClick={() => setRating(n)}
-                      className={n <= rating ? 'text-amber-400' : 'text-muted-foreground'}
-                    >
-                      <Star className="h-5 w-5 fill-current" />
-                    </button>
-                  ))}
-                </div>
-                <Textarea
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  placeholder={m.reviewPlaceholder}
-                  rows={2}
-                />
-                <Button size="sm" disabled={loading} onClick={handleReview}>
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : m.submitReview}
-                </Button>
+        {mode === 'buyer' && purchase.status === 'completed' && purchase.review && !showReview && (
+          <div className="space-y-2 rounded-lg border p-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex gap-0.5 text-amber-400">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <Star
+                    key={n}
+                    className={`h-4 w-4 ${n <= purchase.review!.rating ? 'fill-current' : 'text-muted-foreground/40'}`}
+                  />
+                ))}
               </div>
+              {purchase.review.canEdit && (
+                <Button size="sm" variant="ghost" onClick={() => openReviewForm(purchase.review)}>
+                  {m.editReview}
+                </Button>
+              )}
+            </div>
+            {purchase.review.comment && (
+              <p className="text-sm text-muted-foreground">{purchase.review.comment}</p>
             )}
-          </>
+            {purchase.review.updatedAt &&
+              purchase.review.updatedAt !== purchase.review.createdAt && (
+                <p className="text-xs text-muted-foreground">{m.reviewEdited}</p>
+              )}
+            {!purchase.review.canEdit && (
+              <p className="text-xs text-muted-foreground">{m.reviewEditExpired}</p>
+            )}
+          </div>
+        )}
+
+        {mode === 'buyer' && purchase.status === 'completed' && !purchase.hasReview && !showReview && (
+          <Button size="sm" variant="outline" onClick={() => openReviewForm()}>
+            <Star className="mr-2 h-3 w-3" />
+            {m.leaveReview}
+          </Button>
+        )}
+
+        {mode === 'buyer' && purchase.status === 'completed' && showReview && (
+          <div className="space-y-2 border rounded-lg p-3">
+            <p className="text-sm font-medium">
+              {purchase.review ? m.editReviewTitle : m.leaveReview}
+            </p>
+            {purchase.review?.canEdit && (
+              <p className="text-xs text-muted-foreground">{m.reviewEditHint}</p>
+            )}
+            <div className="flex gap-1">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setRating(n)}
+                  className={n <= rating ? 'text-amber-400' : 'text-muted-foreground'}
+                >
+                  <Star className="h-5 w-5 fill-current" />
+                </button>
+              ))}
+            </div>
+            <Textarea
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder={m.reviewPlaceholder}
+              rows={2}
+            />
+            <div className="flex gap-2">
+              <Button size="sm" disabled={loading} onClick={handleReview}>
+                {loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : purchase.review ? (
+                  m.saveReview
+                ) : (
+                  m.submitReview
+                )}
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setShowReview(false)}>
+                {m.cancelReviewEdit}
+              </Button>
+            </div>
+          </div>
         )}
 
         {mode === 'buyer' &&

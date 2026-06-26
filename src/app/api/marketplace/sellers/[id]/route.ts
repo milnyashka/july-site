@@ -45,7 +45,60 @@ export async function GET(request: Request, context: RouteContext) {
       .order('created_at', { ascending: false }),
   ]);
 
-  const reviewerIds = [...new Set((reviewsRes.data ?? []).map((r) => r.reviewer_id))];
+  const reviews = reviewsRes.data ?? [];
+  const purchaseIds = reviews.map((r) => r.purchase_id);
+  const dealMap = new Map<
+    string,
+    {
+      deal_title: string;
+      deal_price: number;
+      deal_currency: 'rub' | 'usd';
+      deal_category?: string;
+    }
+  >();
+
+  if (purchaseIds.length > 0) {
+    const { data: purchases } = await supabase
+      .from('marketplace_purchases')
+      .select('id, title, price, currency, listing_id')
+      .in('id', purchaseIds);
+
+    const listingIds = [
+      ...new Set((purchases ?? []).map((p) => p.listing_id).filter(Boolean)),
+    ] as string[];
+
+    const listingMap = new Map<string, { title: string; category: string }>();
+
+    if (listingIds.length > 0) {
+      const { data: listings } = await supabase
+        .from('marketplace_listings')
+        .select('id, category, title, title_ru, title_en')
+        .in('id', listingIds);
+
+      for (const listing of listings ?? []) {
+        const title =
+          locale === 'en'
+            ? String(listing.title_en || listing.title_ru || listing.title)
+            : String(listing.title_ru || listing.title_en || listing.title);
+        listingMap.set(listing.id, {
+          title,
+          category: String(listing.category),
+        });
+      }
+    }
+
+    for (const purchase of purchases ?? []) {
+      const listing = listingMap.get(purchase.listing_id);
+      dealMap.set(purchase.id, {
+        deal_title: listing?.title ?? String(purchase.title),
+        deal_price: Number(purchase.price),
+        deal_currency: purchase.currency === 'rub' ? 'rub' : 'usd',
+        deal_category: listing?.category,
+      });
+    }
+  }
+
+  const reviewerIds = [...new Set(reviews.map((r) => r.reviewer_id))];
   const reviewerMap = new Map<string, string>();
 
   if (reviewerIds.length > 0) {
@@ -72,10 +125,11 @@ export async function GET(request: Request, context: RouteContext) {
       completedSales: Number(stats?.completed_sales ?? 0),
       avgRating,
       reviewCount,
-      reviews: (reviewsRes.data ?? []).map((row) =>
+      reviews: reviews.map((row) =>
         mapReviewRow({
           ...row,
           reviewer_label: reviewerMap.get(row.reviewer_id),
+          ...dealMap.get(row.purchase_id),
         })
       ),
       activeListings: (listingsRes.data ?? []).map((row) =>

@@ -38,7 +38,6 @@ const ROLE_DICT_KEYS: Record<AccountRole, keyof typeof import('@/i18n/dictionari
 export default function AdminPage() {
   const { locale, dict } = useI18n();
   const t = dict.admin;
-  const aw = dict.adminWithdrawals;
   const { toast } = useToast();
 
   const [checking, setChecking] = useState(true);
@@ -303,12 +302,6 @@ export default function AdminPage() {
           <p className="text-sm text-muted-foreground mt-1">{t.subtitle}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link href={localizedPath(locale, '/admin/withdrawals')}>
-            <Button variant="secondary" size="sm">
-              <Wallet className="mr-2 h-4 w-4" />
-              {aw.title}
-            </Button>
-          </Link>
           <Button variant="outline" size="sm" onClick={handleLogout}>
             <LogOut className="mr-2 h-4 w-4" />
             {t.logout}

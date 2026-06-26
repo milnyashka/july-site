@@ -2,7 +2,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { createPlategaTransaction, PLATEGA_PAYMENT_METHOD } from '@/lib/platega';
 import { NextResponse } from 'next/server';
 
-const MIN_RUB = 25;
+const MIN_RUB = 10;
 const MAX_RUB = 10000;
 
 export async function POST(request: Request) {
