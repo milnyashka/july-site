@@ -45,8 +45,8 @@ const isSupabaseConfigured =
   typeof process.env.NEXT_PUBLIC_SUPABASE_URL === 'string' &&
   typeof process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY === 'string';
 
-const REFRESH_THROTTLE_MS = 8_000;
-const FOCUS_REFRESH_MS = 60_000;
+const REFRESH_THROTTLE_MS = 15_000;
+const FOCUS_REFRESH_MS = 120_000;
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -63,6 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     tier: 'basic',
   });
   const lastSeenTouchRef = useRef(0);
+  const initialLoadDoneRef = useRef(false);
 
   const refreshProfile = useCallback(
     async (options?: RefreshProfileOptions) => {
@@ -80,12 +81,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const run = (async () => {
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         const currentUser = session?.user ?? null;
         setUser(currentUser);
 
         if (!currentUser) {
           setProfile(null);
+          setLoading(false);
           lastRefreshAtRef.current = Date.now();
           return;
         }
@@ -103,15 +107,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           account_freeze_reason?: string | null;
         };
 
-        let data: ProfileRow | null = null;
+        const [primary, walletRes] = await Promise.all([
+          supabase
+            .from('profiles')
+            .select(
+              'balance, email, currency, avatar_url, username, role, roles, account_frozen, balance_frozen, account_freeze_reason'
+            )
+            .eq('id', currentUser.id)
+            .maybeSingle(),
+          supabase.rpc('get_wallet_balance', { p_user_id: currentUser.id }),
+        ]);
 
-        const primary = await supabase
-          .from('profiles')
-          .select(
-            'balance, email, currency, avatar_url, username, role, roles, account_frozen, balance_frozen, account_freeze_reason'
-          )
-          .eq('id', currentUser.id)
-          .maybeSingle();
+        let data: ProfileRow | null = primary.data;
 
         if (primary.error?.message?.includes('role')) {
           const fallback = await supabase
@@ -120,8 +127,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .eq('id', currentUser.id)
             .maybeSingle();
           data = fallback.data;
-        } else {
-          data = primary.data;
         }
 
         if (!data && currentUser.email) {
@@ -146,32 +151,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const pending = currentUser.user_metadata?.username;
           if (typeof pending === 'string' && !validateUsername(pending.trim())) {
             usernameAppliedRef.current = true;
-            await supabase.rpc('set_username', {
+            void supabase.rpc('set_username', {
               p_user_id: currentUser.id,
               p_username: pending.trim(),
             });
-            const refetch = await supabase
-              .from('profiles')
-              .select(
-                'balance, email, currency, avatar_url, username, role, roles, account_frozen, balance_frozen, account_freeze_reason'
-              )
-              .eq('id', currentUser.id)
-              .maybeSingle();
-            if (refetch.data) data = refetch.data;
           }
         }
 
         if (!data) {
           setProfile(null);
+          setLoading(false);
           lastRefreshAtRef.current = Date.now();
           return;
         }
 
         const currency = (data.currency === 'rub' ? 'rub' : 'usd') as Currency;
-
-        const walletRes = await supabase.rpc('get_wallet_balance', {
-          p_user_id: currentUser.id,
-        });
 
         let lockedBalance = 0;
         let availableBalance = Number(data.balance);
@@ -183,25 +177,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             w.available ?? computeAvailableBalance(Number(data.balance), lockedBalance)
           );
         } else {
-          const lockedRes = await supabase.rpc('get_locked_balance', {
-            p_user_id: currentUser.id,
-          });
-          if (!lockedRes.error) {
-            lockedBalance = Number(lockedRes.data ?? 0);
-            availableBalance = computeAvailableBalance(Number(data.balance), lockedBalance);
-          }
+          availableBalance = computeAvailableBalance(Number(data.balance), 0);
         }
 
         let totalSpentUsd = tierCacheRef.current.totalSpentUsd;
         let tier: CustomerTier = tierCacheRef.current.tier;
 
         if (options?.full) {
-          let purchaseRows: { amount: number; amount_usd?: number | null }[] = [];
           const purchasesRes = await supabase
             .from('purchases')
             .select('amount, amount_usd')
             .eq('user_id', currentUser.id);
 
+          let purchaseRows: { amount: number; amount_usd?: number | null }[] = [];
           if (purchasesRes.error?.message?.includes('amount_usd')) {
             const fallback = await supabase
               .from('purchases')
@@ -234,13 +222,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           accountFreezeReason: data.account_freeze_reason ?? null,
         });
 
-        const now = Date.now();
-        if (now - lastSeenTouchRef.current > 5 * 60_000) {
-          lastSeenTouchRef.current = now;
+        setLoading(false);
+
+        const touchNow = Date.now();
+        if (touchNow - lastSeenTouchRef.current > 5 * 60_000) {
+          lastSeenTouchRef.current = touchNow;
           void supabase.rpc('touch_last_seen', { p_user_id: currentUser.id });
         }
 
-        lastRefreshAtRef.current = now;
+        lastRefreshAtRef.current = touchNow;
       })();
 
       refreshInFlightRef.current = run;
@@ -259,15 +249,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    refreshProfile({ full: true, force: true }).finally(() => setLoading(false));
+    refreshProfile({ force: true }).finally(() => {
+      initialLoadDoneRef.current = true;
+    });
 
     let authTimer: ReturnType<typeof setTimeout> | null = null;
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'TOKEN_REFRESHED') return;
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') return;
+      if (!initialLoadDoneRef.current && event === 'SIGNED_IN') return;
       if (authTimer) clearTimeout(authTimer);
       authTimer = setTimeout(() => {
         void refreshProfile({ force: event === 'SIGNED_IN' || event === 'SIGNED_OUT' });
-      }, 300);
+      }, 500);
     });
 
     return () => {

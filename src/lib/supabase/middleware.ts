@@ -27,6 +27,7 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  await supabase.auth.getUser();
+  // getSession — из cookie, без сетевого запроса на каждый клик
+  await supabase.auth.getSession();
   return supabaseResponse;
 }
