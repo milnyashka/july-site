@@ -19,7 +19,10 @@ type ProfileAvatarProps = {
   className?: string;
 };
 
-function initialsFromEmail(email?: string) {
+function profileInitials(username?: string | null, email?: string) {
+  if (username?.trim()) {
+    return username.trim().slice(0, 2).toUpperCase();
+  }
   if (!email) return '?';
   const local = email.split('@')[0] ?? '';
   return (local.slice(0, 2) || email.slice(0, 2)).toUpperCase();
@@ -84,11 +87,14 @@ export function ProfileAvatar({ size = 'lg', editable = false, className }: Prof
   return (
     <div className={cn('relative inline-flex', className)}>
       <Avatar className={dimension}>
-        <AvatarImage src={profile?.avatarUrl ?? undefined} alt={profile?.email ?? ''} />
+        <AvatarImage
+          src={profile?.avatarUrl ?? undefined}
+          alt={profile?.username ?? profile?.email ?? ''}
+        />
         <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-          {profile?.email ? (
+          {profile?.username || profile?.email ? (
             <span className={size === 'lg' ? 'text-xl' : 'text-xs'}>
-              {initialsFromEmail(profile.email)}
+              {profileInitials(profile?.username, profile?.email)}
             </span>
           ) : (
             <User className={iconSize} />

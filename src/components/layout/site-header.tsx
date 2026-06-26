@@ -24,6 +24,7 @@ export function SiteHeader() {
   const navLinks = [
     { name: dict.nav.home, href: "/" },
     { name: dict.nav.products, href: "/products" },
+    { name: dict.nav.marketplace, href: "/marketplace" },
     ...(user && isReseller(accountRoles) ? [{ name: dict.nav.reseller, href: "/reseller" }] : []),
     ...(user && canAccessModeratorPanel(accountRoles) ? [{ name: dict.nav.moderator, href: "/moderator" }] : []),
     { name: dict.nav.download, href: "/download" },

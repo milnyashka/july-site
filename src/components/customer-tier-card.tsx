@@ -40,9 +40,10 @@ export function CustomerTierCard({ tier, totalSpentUsd }: CustomerTierCardProps)
         </Badge>
       </div>
 
-      <p className="text-sm opacity-90 mb-2">
+      <p className="text-sm opacity-90 mb-1">
         {t.tierSpent.replace('{amount}', totalSpentUsd.toFixed(2))}
       </p>
+      <p className="text-xs opacity-70 mb-2">{t.tierProductsOnly}</p>
 
       {progress.nextTier ? (
         <>

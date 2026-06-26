@@ -1,15 +1,20 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
 import type { Currency } from '@/lib/currency';
 import { getPrimaryRole, resolveAccountRoles, type AccountRole } from '@/lib/roles';
-import { getTierFromSpentUsd, sumPurchasesToUsd, type CustomerTier } from '@/lib/tiers';
+import { getTierFromSpentUsd, sumProductPurchasesToUsd, type CustomerTier } from '@/lib/tiers';
+import { computeAvailableBalance } from '@/lib/wallet-balance';
+import { validateUsername } from '@/lib/username';
 
 type Profile = {
   balance: number;
+  lockedBalance: number;
+  availableBalance: number;
   email: string;
+  username: string | null;
   currency: Currency;
   avatarUrl: string | null;
   role: AccountRole;
@@ -21,11 +26,16 @@ type Profile = {
   accountFreezeReason: string | null;
 };
 
+type RefreshProfileOptions = {
+  full?: boolean;
+  force?: boolean;
+};
+
 type AuthContextValue = {
   user: User | null;
   profile: Profile | null;
   loading: boolean;
-  refreshProfile: () => Promise<void>;
+  refreshProfile: (options?: RefreshProfileOptions) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -35,113 +45,213 @@ const isSupabaseConfigured =
   typeof process.env.NEXT_PUBLIC_SUPABASE_URL === 'string' &&
   typeof process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY === 'string';
 
+const REFRESH_THROTTLE_MS = 8_000;
+const FOCUS_REFRESH_MS = 60_000;
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(isSupabaseConfigured);
   const supabase = useMemo(() => (isSupabaseConfigured ? createClient() : null), []);
 
-  const refreshProfile = useCallback(async () => {
-    if (!supabase) {
-      setLoading(false);
-      return;
-    }
+  const lastRefreshAtRef = useRef(0);
+  const refreshInFlightRef = useRef<Promise<void> | null>(null);
+  const usernameAppliedRef = useRef(false);
+  const lastFocusRefreshRef = useRef(0);
+  const tierCacheRef = useRef<{ totalSpentUsd: number; tier: CustomerTier }>({
+    totalSpentUsd: 0,
+    tier: 'basic',
+  });
+  const lastSeenTouchRef = useRef(0);
 
-    await supabase.auth.refreshSession();
-    const { data: { user: currentUser } } = await supabase.auth.getUser();
-    setUser(currentUser);
-
-    if (!currentUser) {
-      setProfile(null);
-      return;
-    }
-
-    type ProfileRow = {
-      balance: number | string;
-      email: string;
-      currency: string;
-      avatar_url: string | null;
-      role?: string | null;
-      roles?: string[] | null;
-      account_frozen?: boolean | null;
-      balance_frozen?: boolean | null;
-      account_freeze_reason?: string | null;
-    };
-
-    let data: ProfileRow | null = null;
-
-    const primary = await supabase
-      .from('profiles')
-      .select('balance, email, currency, avatar_url, role, roles, account_frozen, balance_frozen, account_freeze_reason')
-      .eq('id', currentUser.id)
-      .maybeSingle();
-
-    if (primary.error?.message?.includes('role')) {
-      const fallback = await supabase
-        .from('profiles')
-        .select('balance, email, currency, avatar_url')
-        .eq('id', currentUser.id)
-        .maybeSingle();
-      data = fallback.data;
-    } else {
-      data = primary.data;
-    }
-
-    if (!data && currentUser.email) {
-      const currency =
-        typeof window !== 'undefined' && window.location.pathname.startsWith('/ru') ? 'rub' : 'usd';
-      await supabase.from('profiles').insert({
-        id: currentUser.id,
-        email: currentUser.email.toLowerCase(),
-        currency,
-      });
-      const refetch = await supabase
-        .from('profiles')
-        .select('balance, email, currency, avatar_url, role, roles, account_frozen, balance_frozen, account_freeze_reason')
-        .eq('id', currentUser.id)
-        .maybeSingle();
-      data = refetch.data;
-    }
-
-    if (data) {
-      const currency = (data.currency === 'rub' ? 'rub' : 'usd') as Currency;
-
-      let purchaseRows: { amount: number; amount_usd?: number | null }[] = [];
-      const purchasesRes = await supabase
-        .from('purchases')
-        .select('amount, amount_usd')
-        .eq('user_id', currentUser.id);
-
-      if (purchasesRes.error?.message?.includes('amount_usd')) {
-        const fallback = await supabase
-          .from('purchases')
-          .select('amount')
-          .eq('user_id', currentUser.id);
-        purchaseRows = fallback.data ?? [];
-      } else {
-        purchaseRows = purchasesRes.data ?? [];
+  const refreshProfile = useCallback(
+    async (options?: RefreshProfileOptions) => {
+      if (!supabase) {
+        setLoading(false);
+        return;
       }
 
-      const totalSpentUsd = sumPurchasesToUsd(purchaseRows, currency);
-      const tier = getTierFromSpentUsd(totalSpentUsd);
+      const now = Date.now();
+      if (!options?.force && refreshInFlightRef.current) {
+        return refreshInFlightRef.current;
+      }
+      if (!options?.force && now - lastRefreshAtRef.current < REFRESH_THROTTLE_MS) {
+        return;
+      }
 
-      setProfile({
-        balance: Number(data.balance),
-        email: data.email,
-        currency,
-        avatarUrl: data.avatar_url ?? null,
-        roles: resolveAccountRoles(data.roles, data.role, currentUser),
-        role: getPrimaryRole(resolveAccountRoles(data.roles, data.role, currentUser)),
-        totalSpentUsd,
-        tier,
-        accountFrozen: Boolean(data.account_frozen),
-        balanceFrozen: Boolean(data.balance_frozen),
-        accountFreezeReason: data.account_freeze_reason ?? null,
-      });
-    } else {
-      setProfile(null);
-    }
-  }, [supabase]);
+      const run = (async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
+
+        if (!currentUser) {
+          setProfile(null);
+          lastRefreshAtRef.current = Date.now();
+          return;
+        }
+
+        type ProfileRow = {
+          balance: number | string;
+          email: string;
+          currency: string;
+          avatar_url: string | null;
+          username?: string | null;
+          role?: string | null;
+          roles?: string[] | null;
+          account_frozen?: boolean | null;
+          balance_frozen?: boolean | null;
+          account_freeze_reason?: string | null;
+        };
+
+        let data: ProfileRow | null = null;
+
+        const primary = await supabase
+          .from('profiles')
+          .select(
+            'balance, email, currency, avatar_url, username, role, roles, account_frozen, balance_frozen, account_freeze_reason'
+          )
+          .eq('id', currentUser.id)
+          .maybeSingle();
+
+        if (primary.error?.message?.includes('role')) {
+          const fallback = await supabase
+            .from('profiles')
+            .select('balance, email, currency, avatar_url')
+            .eq('id', currentUser.id)
+            .maybeSingle();
+          data = fallback.data;
+        } else {
+          data = primary.data;
+        }
+
+        if (!data && currentUser.email) {
+          const currency =
+            typeof window !== 'undefined' && window.location.pathname.startsWith('/ru') ? 'rub' : 'usd';
+          await supabase.from('profiles').insert({
+            id: currentUser.id,
+            email: currentUser.email.toLowerCase(),
+            currency,
+          });
+          const refetch = await supabase
+            .from('profiles')
+            .select(
+              'balance, email, currency, avatar_url, username, role, roles, account_frozen, balance_frozen, account_freeze_reason'
+            )
+            .eq('id', currentUser.id)
+            .maybeSingle();
+          data = refetch.data;
+        }
+
+        if (data && !data.username && !usernameAppliedRef.current) {
+          const pending = currentUser.user_metadata?.username;
+          if (typeof pending === 'string' && !validateUsername(pending.trim())) {
+            usernameAppliedRef.current = true;
+            await supabase.rpc('set_username', {
+              p_user_id: currentUser.id,
+              p_username: pending.trim(),
+            });
+            const refetch = await supabase
+              .from('profiles')
+              .select(
+                'balance, email, currency, avatar_url, username, role, roles, account_frozen, balance_frozen, account_freeze_reason'
+              )
+              .eq('id', currentUser.id)
+              .maybeSingle();
+            if (refetch.data) data = refetch.data;
+          }
+        }
+
+        if (!data) {
+          setProfile(null);
+          lastRefreshAtRef.current = Date.now();
+          return;
+        }
+
+        const currency = (data.currency === 'rub' ? 'rub' : 'usd') as Currency;
+
+        const walletRes = await supabase.rpc('get_wallet_balance', {
+          p_user_id: currentUser.id,
+        });
+
+        let lockedBalance = 0;
+        let availableBalance = Number(data.balance);
+
+        if (!walletRes.error && walletRes.data) {
+          const w = walletRes.data as { balance?: number; locked?: number; available?: number };
+          lockedBalance = Number(w.locked ?? 0);
+          availableBalance = Number(
+            w.available ?? computeAvailableBalance(Number(data.balance), lockedBalance)
+          );
+        } else {
+          const lockedRes = await supabase.rpc('get_locked_balance', {
+            p_user_id: currentUser.id,
+          });
+          if (!lockedRes.error) {
+            lockedBalance = Number(lockedRes.data ?? 0);
+            availableBalance = computeAvailableBalance(Number(data.balance), lockedBalance);
+          }
+        }
+
+        let totalSpentUsd = tierCacheRef.current.totalSpentUsd;
+        let tier: CustomerTier = tierCacheRef.current.tier;
+
+        if (options?.full) {
+          let purchaseRows: { amount: number; amount_usd?: number | null }[] = [];
+          const purchasesRes = await supabase
+            .from('purchases')
+            .select('amount, amount_usd')
+            .eq('user_id', currentUser.id);
+
+          if (purchasesRes.error?.message?.includes('amount_usd')) {
+            const fallback = await supabase
+              .from('purchases')
+              .select('amount')
+              .eq('user_id', currentUser.id);
+            purchaseRows = fallback.data ?? [];
+          } else {
+            purchaseRows = purchasesRes.data ?? [];
+          }
+
+          totalSpentUsd = sumProductPurchasesToUsd(purchaseRows, currency);
+          tier = getTierFromSpentUsd(totalSpentUsd);
+          tierCacheRef.current = { totalSpentUsd, tier };
+        }
+
+        setProfile({
+          balance: Number(data.balance),
+          lockedBalance,
+          availableBalance,
+          email: data.email,
+          username: data.username ? String(data.username) : null,
+          currency,
+          avatarUrl: data.avatar_url ?? null,
+          roles: resolveAccountRoles(data.roles, data.role, currentUser),
+          role: getPrimaryRole(resolveAccountRoles(data.roles, data.role, currentUser)),
+          totalSpentUsd,
+          tier,
+          accountFrozen: Boolean(data.account_frozen),
+          balanceFrozen: Boolean(data.balance_frozen),
+          accountFreezeReason: data.account_freeze_reason ?? null,
+        });
+
+        const now = Date.now();
+        if (now - lastSeenTouchRef.current > 5 * 60_000) {
+          lastSeenTouchRef.current = now;
+          void supabase.rpc('touch_last_seen', { p_user_id: currentUser.id });
+        }
+
+        lastRefreshAtRef.current = now;
+      })();
+
+      refreshInFlightRef.current = run;
+      try {
+        await run;
+      } finally {
+        refreshInFlightRef.current = null;
+      }
+    },
+    [supabase]
+  );
 
   useEffect(() => {
     if (!supabase) {
@@ -149,20 +259,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    refreshProfile().finally(() => setLoading(false));
+    refreshProfile({ full: true, force: true }).finally(() => setLoading(false));
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      refreshProfile();
+    let authTimer: ReturnType<typeof setTimeout> | null = null;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'TOKEN_REFRESHED') return;
+      if (authTimer) clearTimeout(authTimer);
+      authTimer = setTimeout(() => {
+        void refreshProfile({ force: event === 'SIGNED_IN' || event === 'SIGNED_OUT' });
+      }, 300);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      if (authTimer) clearTimeout(authTimer);
+    };
   }, [supabase, refreshProfile]);
 
   useEffect(() => {
     const refresh = () => {
-      if (document.visibilityState === 'visible') {
-        void refreshProfile();
-      }
+      if (document.visibilityState !== 'visible') return;
+      const now = Date.now();
+      if (now - lastFocusRefreshRef.current < FOCUS_REFRESH_MS) return;
+      lastFocusRefreshRef.current = now;
+      void refreshProfile();
     };
 
     window.addEventListener('focus', refresh);

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Loader2, Lock, LogOut, Search, Wallet, BadgePercent } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ASSIGNABLE_ROLES, normalizeRoles, type AccountRole } from '@/lib/roles';
@@ -12,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ModeratorLogsPanel } from '@/components/moderator-logs-panel';
 import { formatMoney, type Currency } from '@/lib/currency';
 import { useI18n } from '@/i18n/I18nProvider';
+import { localizedPath } from '@/i18n/localized-path';
 import { useToast } from '@/hooks/use-toast';
 
 type UserInfo = {
@@ -34,8 +36,9 @@ const ROLE_DICT_KEYS: Record<AccountRole, keyof typeof import('@/i18n/dictionari
 };
 
 export default function AdminPage() {
-  const { dict } = useI18n();
+  const { locale, dict } = useI18n();
   const t = dict.admin;
+  const aw = dict.adminWithdrawals;
   const { toast } = useToast();
 
   const [checking, setChecking] = useState(true);
@@ -294,15 +297,23 @@ export default function AdminPage() {
         </div>
       )}
 
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold font-headline">{t.title}</h1>
           <p className="text-sm text-muted-foreground mt-1">{t.subtitle}</p>
         </div>
-        <Button variant="outline" size="sm" onClick={handleLogout}>
-          <LogOut className="mr-2 h-4 w-4" />
-          {t.logout}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Link href={localizedPath(locale, '/admin/withdrawals')}>
+            <Button variant="secondary" size="sm">
+              <Wallet className="mr-2 h-4 w-4" />
+              {aw.title}
+            </Button>
+          </Link>
+          <Button variant="outline" size="sm" onClick={handleLogout}>
+            <LogOut className="mr-2 h-4 w-4" />
+            {t.logout}
+          </Button>
+        </div>
       </div>
 
       <Card className="mb-6 bg-card/80 border-border/50">

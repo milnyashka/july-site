@@ -53,7 +53,11 @@ export function WalletBadge() {
         <Button variant="outline" size="sm" className="gap-1.5 font-semibold">
           <Wallet className="h-4 w-4 text-primary" />
           <span>
-            {formatBalanceForLocale(profile?.balance ?? 0, profile?.currency ?? 'usd', locale)}
+            {formatBalanceForLocale(
+              profile?.availableBalance ?? profile?.balance ?? 0,
+              profile?.currency ?? 'usd',
+              locale
+            )}
           </span>
         </Button>
       </Link>

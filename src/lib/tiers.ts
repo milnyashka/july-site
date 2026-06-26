@@ -82,7 +82,8 @@ export function getFinalPlanPrice(
   return applyPurchaseDiscounts(base, opts);
 }
 
-export function sumPurchasesToUsd(
+/** Только покупки во вкладке «Продукты» (таблица purchases). Маркет не учитывается. */
+export function sumProductPurchasesToUsd(
   purchases: { amount: number; amount_usd?: number | null }[],
   fallbackCurrency: Currency
 ): number {
@@ -94,3 +95,6 @@ export function sumPurchasesToUsd(
     return sum + (fallbackCurrency === 'rub' ? rubToUsd(amount) : amount);
   }, 0);
 }
+
+/** @deprecated Use sumProductPurchasesToUsd */
+export const sumPurchasesToUsd = sumProductPurchasesToUsd;

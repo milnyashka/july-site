@@ -30,7 +30,8 @@ export type Permission =
   | 'view_all_moderator_logs'
   | 'reseller_pricing'
   | 'marketplace_sell'
-  | 'marketplace_buy';
+  | 'marketplace_buy'
+  | 'moderate_marketplace';
 
 const ROLE_PERMISSIONS: Record<AccountRole, readonly Permission[]> = {
   owner: [
@@ -48,6 +49,7 @@ const ROLE_PERMISSIONS: Record<AccountRole, readonly Permission[]> = {
     'reseller_pricing',
     'marketplace_sell',
     'marketplace_buy',
+    'moderate_marketplace',
   ],
   moderator_senior: [
     'moderate_users',
@@ -57,7 +59,9 @@ const ROLE_PERMISSIONS: Record<AccountRole, readonly Permission[]> = {
     'view_user_keys',
     'delete_user_keys',
     'view_moderator_logs',
+    'marketplace_sell',
     'marketplace_buy',
+    'moderate_marketplace',
   ],
   moderator: [
     'moderate_users',
@@ -66,11 +70,13 @@ const ROLE_PERMISSIONS: Record<AccountRole, readonly Permission[]> = {
     'zero_user_balance',
     'view_user_keys',
     'delete_user_keys',
+    'marketplace_sell',
     'marketplace_buy',
+    'moderate_marketplace',
   ],
-  reseller: ['reseller_pricing', 'marketplace_buy'],
+  reseller: ['reseller_pricing', 'marketplace_sell', 'marketplace_buy'],
   seller: ['marketplace_sell', 'marketplace_buy'],
-  user: ['marketplace_buy'],
+  user: ['marketplace_sell', 'marketplace_buy'],
 };
 
 export function getPermissions(role: AccountRole): readonly Permission[] {
@@ -136,6 +142,12 @@ export function assignableRoles(): AccountRole[] {
 
 export function canAccessModeratorPanel(roles: AccountRole | AccountRole[] | string | null | undefined): boolean {
   return canModerateUsers(roles);
+}
+
+export function canModerateMarketplace(
+  roles: AccountRole | AccountRole[] | string | null | undefined
+): boolean {
+  return hasPermission(roles, 'moderate_marketplace');
 }
 
 export function canAccessAdminPanel(

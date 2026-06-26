@@ -1,4 +1,5 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { creditCryptobotTopup } from '@/lib/cryptobot';
 import { creditPlategaTopup } from '@/lib/platega-topup';
 import { NextResponse } from 'next/server';
 
@@ -19,7 +20,7 @@ export async function POST() {
     .select('id, user_id, amount, status, method, external_id')
     .eq('user_id', user.id)
     .eq('status', 'pending')
-    .in('method', ['sbp', 'crypto'])
+    .in('method', ['sbp', 'crypto', 'cryptobot'])
     .not('external_id', 'is', null)
     .order('created_at', { ascending: false })
     .limit(5);
@@ -32,7 +33,10 @@ export async function POST() {
 
   for (const topup of pending) {
     try {
-      const result = await creditPlategaTopup(service, topup);
+      const result =
+        topup.method === 'cryptobot'
+          ? await creditCryptobotTopup(service, topup)
+          : await creditPlategaTopup(service, topup);
       if (result.credited) confirmed++;
     } catch (err) {
       console.error('[topup/confirm] error for', topup.id, err);

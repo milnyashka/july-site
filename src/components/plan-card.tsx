@@ -67,7 +67,7 @@ export function PlanCard({ plan, label, durationLabel, popular, reseller }: Plan
       }
 
       setPurchasedKey(data.key);
-      await refreshProfile();
+      await refreshProfile({ full: true, force: true });
       toast({ title: t.purchaseSuccess, description: t.keyDelivered });
     } catch {
       toast({ title: t.purchaseFailed, variant: 'destructive' });
@@ -117,7 +117,8 @@ export function PlanCard({ plan, label, durationLabel, popular, reseller }: Plan
           </Button>
           {user && profile && (
             <p className="mt-2 text-center text-xs text-muted-foreground">
-              {t.balance}: {formatBalanceForLocale(profile.balance, profile.currency, locale)}
+              {t.availableBalance}:{' '}
+              {formatBalanceForLocale(profile.availableBalance ?? profile.balance, profile.currency, locale)}
             </p>
           )}
         </div>

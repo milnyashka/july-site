@@ -3,9 +3,12 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Wallet, KeyRound, LogOut, ArrowRight, ChevronRight, Shield } from 'lucide-react';
+import { Wallet, KeyRound, LogOut, ArrowRight, ChevronRight, Shield, Store } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { isReseller, isSeller, isModerator } from '@/lib/roles';
+import { isReseller, isModerator } from '@/lib/roles';
+import type { MarketplaceBalanceHold, MarketplacePurchase } from '@/lib/marketplace';
+import { AccountWithdrawalCard } from '@/components/account-withdrawal-card';
+import { MarketplaceOrderCard } from '@/components/marketplace-order-card';
 import { LicenseKeyCard } from '@/components/license-key-card';
 import { CustomerTierCard, TIER_STYLES } from '@/components/customer-tier-card';
 import { cn } from '@/lib/utils';
@@ -14,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/components/auth-provider';
 import { formatBalanceForLocale } from '@/lib/currency';
 import { ProfileAvatar } from '@/components/profile-avatar';
+
 import { createClient } from '@/lib/supabase/client';
 import { useI18n } from '@/i18n/I18nProvider';
 import { localizedPath } from '@/i18n/localized-path';
@@ -37,11 +41,25 @@ export default function AccountPage() {
   const { user, profile, loading, signOut, refreshProfile } = useAuth();
   const { locale, dict } = useI18n();
   const t = dict.wallet;
+  const m = dict.marketplace;
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [marketPurchases, setMarketPurchases] = useState<MarketplacePurchase[]>([]);
+  const [marketSales, setMarketSales] = useState<MarketplacePurchase[]>([]);
+  const [marketHolds, setMarketHolds] = useState<MarketplaceBalanceHold[]>([]);
+
+  const reloadMarketplace = () => {
+    fetch('/api/marketplace/my')
+      .then((r) => r.json())
+      .then((data) => {
+        setMarketPurchases(data.purchases ?? []);
+        setMarketSales(data.sales ?? []);
+        setMarketHolds(data.holds ?? []);
+      });
+  };
 
   useEffect(() => {
     if (!loading && !user) {
@@ -88,6 +106,13 @@ export default function AccountPage() {
       .order('created_at', { ascending: false })
       .limit(10)
       .then(({ data }) => setTransactions(data ?? []));
+
+    refreshProfile({ full: true, force: true });
+
+    fetch('/api/marketplace/release-holds', { method: 'POST' }).finally(() => {
+      reloadMarketplace();
+      refreshProfile({ full: true, force: true });
+    });
   }, [user]);
 
   if (loading || !user) {
@@ -111,8 +136,12 @@ export default function AccountPage() {
         <div className="flex items-center gap-4">
           <ProfileAvatar size="lg" editable />
           <div>
-            <h1 className="text-3xl font-bold font-headline">{t.account}</h1>
-            <p className="text-muted-foreground mt-1">{profile?.email}</p>
+            <h1 className="text-3xl font-bold font-headline">
+              {profile?.username ?? t.account}
+            </h1>
+            {profile?.email && (
+              <p className="text-muted-foreground mt-1 text-sm">{profile.email}</p>
+            )}
             <div className="mt-2 flex flex-wrap items-center gap-2">
               {profile && (
                 <Badge
@@ -131,11 +160,7 @@ export default function AccountPage() {
                   </Badge>
                 </Link>
               )}
-              {isSeller(accountRoles) && (
-                <Badge variant="outline" className="text-xs uppercase tracking-wider">
-                  {t.sellerBadge}
-                </Badge>
-              )}
+
               {isModerator(accountRoles) && (
                 <Link href={localizedPath(locale, '/moderator')}>
                   <Badge variant="secondary" className="gap-1 text-xs uppercase tracking-wider cursor-pointer hover:bg-secondary/80">
@@ -173,11 +198,24 @@ export default function AccountPage() {
             <Wallet className="h-5 w-5 text-primary" />
             {t.balance}
           </CardTitle>
-          <span className="text-3xl font-bold text-primary">
-            {formatBalanceForLocale(profile?.balance ?? 0, profile?.currency ?? 'usd', locale)}
-          </span>
+          <div className="text-right">
+            <span className="text-3xl font-bold text-primary block">
+              {formatBalanceForLocale(
+                profile?.availableBalance ?? profile?.balance ?? 0,
+                profile?.currency ?? 'usd',
+                locale
+              )}
+            </span>
+            <span className="text-xs text-muted-foreground">{t.availableBalance}</span>
+            {profile && (profile.lockedBalance ?? 0) > 0 && (
+              <p className="text-xs text-amber-400 mt-1">
+                {t.lockedBalanceLabel}:{' '}
+                {formatBalanceForLocale(profile.lockedBalance, profile.currency, locale)}
+              </p>
+            )}
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-wrap gap-3">
           <Link href={localizedPath(locale, '/wallet/topup')}>
             <Button className="w-full sm:w-auto">
               {t.topUp}
@@ -186,6 +224,34 @@ export default function AccountPage() {
           </Link>
         </CardContent>
       </Card>
+
+      {marketHolds.length > 0 && (
+        <div className="mb-6 rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm">
+          <p className="font-semibold text-amber-200 mb-2">{m.pendingPayouts}</p>
+          <ul className="space-y-1 text-muted-foreground">
+            {marketHolds.map((h) => (
+              <li key={h.id}>
+                {h.title ?? m.sale}: {formatBalanceForLocale(h.amount, h.currency, locale)} —{' '}
+                {m.holdUntil}{' '}
+                {new Date(h.releaseAt).toLocaleString(locale === 'ru' ? 'ru-RU' : 'en-US')}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="mb-8">
+        <AccountWithdrawalCard
+          availableBalance={profile?.availableBalance ?? profile?.balance ?? 0}
+          totalBalance={profile?.balance ?? 0}
+          lockedBalance={profile?.lockedBalance ?? 0}
+          currency={profile?.currency ?? 'usd'}
+          onBalanceChange={() => {
+            refreshProfile();
+            reloadMarketplace();
+          }}
+        />
+      </div>
 
       <div className="space-y-8">
         <section>
@@ -212,6 +278,54 @@ export default function AccountPage() {
             </div>
           )}
         </section>
+
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold font-headline flex items-center gap-2">
+              <Store className="h-5 w-5" />
+              {m.myPurchases}
+            </h2>
+            <Link href={localizedPath(locale, '/marketplace')}>
+              <Button variant="ghost" size="sm">
+                {m.backToMarket}
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+          {marketPurchases.length === 0 ? (
+            <p className="text-muted-foreground">{m.noPurchases}</p>
+          ) : (
+            <div className="space-y-3">
+              {marketPurchases.map((mp) => (
+                <MarketplaceOrderCard
+                  key={mp.id}
+                  purchase={mp}
+                  mode="buyer"
+                  onUpdated={reloadMarketplace}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+
+        {marketSales.length > 0 && (
+          <section>
+            <h2 className="text-xl font-semibold font-headline mb-4 flex items-center gap-2">
+              <Store className="h-5 w-5" />
+              {m.mySales}
+            </h2>
+            <div className="space-y-3">
+              {marketSales.map((sale) => (
+                <MarketplaceOrderCard
+                  key={sale.id}
+                  purchase={sale}
+                  mode="seller"
+                  onUpdated={reloadMarketplace}
+                />
+              ))}
+            </div>
+          </section>
+        )}
 
         <section>
           <h2 className="text-xl font-semibold font-headline mb-4">{t.history}</h2>

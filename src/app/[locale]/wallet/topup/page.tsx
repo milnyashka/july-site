@@ -60,22 +60,20 @@ export default function TopUpPage() {
     const res = await fetch('/api/wallet/topup/cryptobot', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amount }),
+      body: JSON.stringify({ amount, locale }),
     });
     const data = await res.json();
 
     if (!res.ok) {
-      toast({ title: t.topUpFailed, variant: 'destructive' });
-      throw new Error('failed');
+      toast({
+        title: t.topUpFailed,
+        description: data.error === 'payment_not_configured' ? t.notConfigured : undefined,
+        variant: 'destructive',
+      });
+      throw new Error(data.error || 'failed');
     }
 
-    const message = `Хочу пополнить ${amount} ₽ через CryptoBot. Email: ${profile?.email ?? ''}. Topup ID: ${data.topupId ?? ''}`;
-    window.open(`${supportLinks.telegram}?text=${encodeURIComponent(message)}`, '_blank');
-
-    toast({ 
-      title: 'Заявка создана', 
-      description: 'Напиши в Telegram — пришлём реквизиты для CryptoBot' 
-    });
+    window.location.href = data.url;
   };
 
   const topUpSbp = async (amount: number) => {
@@ -216,9 +214,7 @@ export default function TopUpPage() {
           </div>
 
           <p className="mt-3 text-xs text-muted-foreground text-center">
-            {selectedMethod === 'cryptobot'
-              ? 'После выбора суммы откроется чат с поддержкой для подтверждения.'
-              : 'После выбора суммы вас перенаправит на страницу оплаты.'}
+            {t.topUpRedirectHint}
           </p>
         </div>
       )}

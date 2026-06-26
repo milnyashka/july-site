@@ -13,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { plans, getPlanPrice, type PlanId } from '@/lib/plans';
-import { getFinalPlanPrice } from '@/lib/tiers';
+import { getFinalPlanPrice, getTierDiscount } from '@/lib/tiers';
 import { currencyForLocale, formatBalanceForLocale, formatMoney } from '@/lib/currency';
 import { useAuth } from '@/components/auth-provider';
 import { useI18n } from '@/i18n/I18nProvider';
@@ -80,7 +80,7 @@ export function PurchasePlanDialog({ open, onOpenChange, reseller }: PurchasePla
       }
 
       setPurchasedKey(data.key);
-      await refreshProfile();
+      await refreshProfile({ full: true, force: true });
       toast({ title: w.purchaseSuccess, description: w.keyDelivered });
     } catch {
       toast({ title: w.purchaseFailed, variant: 'destructive' });
@@ -172,7 +172,11 @@ export function PurchasePlanDialog({ open, onOpenChange, reseller }: PurchasePla
               <p className="text-center text-sm text-muted-foreground">
                 {w.balance}:{' '}
                 <span className="text-foreground font-medium">
-                  {formatBalanceForLocale(profile.balance, profile.currency, locale)}
+                  {formatBalanceForLocale(
+                    profile.availableBalance ?? profile.balance,
+                    profile.currency,
+                    locale
+                  )}
                 </span>
               </p>
             )}
@@ -187,6 +191,12 @@ export function PurchasePlanDialog({ open, onOpenChange, reseller }: PurchasePla
                 ? `${w.buyFor} ${formatMoney(selectedPrice, displayCurrency)}`
                 : dict.productCard.purchase}
             </Button>
+
+            {tier !== 'basic' && (
+              <p className="text-center text-xs text-primary/90">
+                {w.tierDiscount.replace('{percent}', String(Math.round(getTierDiscount(tier) * 100)))}
+              </p>
+            )}
 
             <p className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
               <KeyRound className="h-3 w-3" />

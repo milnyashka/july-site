@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useI18n } from '@/i18n/I18nProvider';
 import { localizedPath } from '@/i18n/localized-path';
 import { Loader2 } from 'lucide-react';
+import { USERNAME_MAX, USERNAME_MIN, validateUsername } from '@/lib/username';
 
 function translateAuthError(message: string, t: { authErrors: Record<string, string> }) {
   const lower = message.toLowerCase();
@@ -30,6 +31,7 @@ export default function RegisterPage() {
   const accountPath = localizedPath(locale, '/account');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
@@ -62,13 +64,25 @@ export default function RegisterPage() {
     }
 
     const normalizedEmail = email.toLowerCase().trim();
+    const normalizedUsername = username.trim();
+
+    const usernameError = validateUsername(normalizedUsername);
+    if (usernameError) {
+      const key = usernameError as keyof typeof t.usernameRegisterErrors;
+      setError(t.usernameRegisterErrors[key] ?? t.usernameRegisterErrors.invalid_format);
+      setLoading(false);
+      return;
+    }
 
     const { data, error: authError } = await supabase.auth.signUp({
       email: normalizedEmail,
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/api/auth/callback?next=${localizedPath(locale, '/account')}`,
-        data: { currency: locale === 'ru' ? 'rub' : 'usd' },
+        data: {
+          currency: locale === 'ru' ? 'rub' : 'usd',
+          username: normalizedUsername,
+        },
       },
     });
 
@@ -80,6 +94,19 @@ export default function RegisterPage() {
 
     if (!data.session) {
       router.push(`${localizedPath(locale, '/login')}?registered=1`);
+      return;
+    }
+
+    const usernameRes = await fetch('/api/profile/username', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: normalizedUsername }),
+    });
+    if (!usernameRes.ok) {
+      const usernameData = await usernameRes.json();
+      const key = usernameData.error as keyof typeof t.usernameRegisterErrors;
+      setError(t.usernameRegisterErrors[key] ?? t.usernameRegisterErrors.invalid_format);
+      setLoading(false);
       return;
     }
 
@@ -114,6 +141,22 @@ export default function RegisterPage() {
                 required
                 autoComplete="email"
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="username">{t.username}</Label>
+              <Input
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value.replace(/[^a-zA-Z]/g, '').slice(0, USERNAME_MAX))}
+                placeholder={t.usernamePlaceholder}
+                required
+                minLength={USERNAME_MIN}
+                maxLength={USERNAME_MAX}
+                autoComplete="username"
+                spellCheck={false}
+              />
+              <p className="text-xs text-muted-foreground">{t.usernameRegisterHint}</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">{t.password}</Label>

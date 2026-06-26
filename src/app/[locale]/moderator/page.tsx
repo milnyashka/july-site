@@ -22,6 +22,7 @@ import { formatMoney, type Currency } from '@/lib/currency';
 import { canAccessModeratorPanel, canViewModeratorLogs } from '@/lib/permissions';
 import { type AccountRole } from '@/lib/roles';
 import { ModeratorLogsPanel } from '@/components/moderator-logs-panel';
+import { ModeratorMarketplacePanel } from '@/components/moderator-marketplace-panel';
 import { useI18n } from '@/i18n/I18nProvider';
 import { localizedPath } from '@/i18n/localized-path';
 import { useToast } from '@/hooks/use-toast';
@@ -425,6 +426,10 @@ export default function ModeratorPage() {
           </Card>
         </>
       )}
+
+      <div className="mt-8">
+        <ModeratorMarketplacePanel />
+      </div>
 
       {showLogs && (
         <div className="mt-8">
