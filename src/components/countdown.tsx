@@ -5,35 +5,45 @@ import { useState, useEffect } from "react";
 // Summer sale — 7 days from launch (ends Jun 30, 2026 23:59:59)
 const SALE_END = new Date("2026-06-30T23:59:59");
 
-const Countdown = () => {
-  const calculateTimeLeft = () => {
-    const difference = +SALE_END - +new Date();
-    let timeLeft = {
-        days: 0,
-        hours: 0,
-        minutes: 0,
-    };
-
-    if (difference > 0) {
-      timeLeft = {
-        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-        hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
-        minutes: Math.floor((difference / 1000 / 60) % 60),
-      };
-    }
-    return timeLeft;
+function calculateTimeLeft() {
+  const difference = +SALE_END - +new Date();
+  if (difference <= 0) {
+    return { days: 0, hours: 0, minutes: 0 };
+  }
+  return {
+    days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+    hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+    minutes: Math.floor((difference / 1000 / 60) % 60),
   };
+}
 
-  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0 });
+const Countdown = () => {
+  const [timeLeft, setTimeLeft] = useState(calculateTimeLeft);
 
   useEffect(() => {
-    setTimeLeft(calculateTimeLeft());
-    
-    const timer = setInterval(() => {
-      setTimeLeft(calculateTimeLeft());
-    }, 1000);
+    let timeoutId: ReturnType<typeof setTimeout>;
 
-    return () => clearInterval(timer);
+    const tick = () => {
+      if (document.visibilityState === "visible") {
+        setTimeLeft(calculateTimeLeft());
+      }
+      const msToNextMinute = 60_000 - (Date.now() % 60_000);
+      timeoutId = setTimeout(tick, msToNextMinute);
+    };
+
+    tick();
+
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        setTimeLeft(calculateTimeLeft());
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      clearTimeout(timeoutId);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, []);
 
   return (

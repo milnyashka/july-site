@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useVisibleInterval } from '@/hooks/use-visible-interval';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
@@ -40,9 +41,9 @@ export default function MarketplaceMessagesPage() {
   useEffect(() => {
     if (!user) return;
     loadThreads();
-    const interval = setInterval(loadThreads, 8000);
-    return () => clearInterval(interval);
   }, [user, loadThreads]);
+
+  useVisibleInterval(user ? loadThreads : () => {}, user ? 30_000 : null);
 
   const active = threads.find((t) => t.id === activeId);
 

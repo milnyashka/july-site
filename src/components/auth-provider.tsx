@@ -280,10 +280,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       void refreshProfile();
     };
 
-    window.addEventListener('focus', refresh);
     document.addEventListener('visibilitychange', refresh);
     return () => {
-      window.removeEventListener('focus', refresh);
       document.removeEventListener('visibilitychange', refresh);
     };
   }, [refreshProfile]);

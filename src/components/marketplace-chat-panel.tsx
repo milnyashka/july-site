@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useVisibleInterval } from '@/hooks/use-visible-interval';
 import { Loader2, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,7 +30,16 @@ export function MarketplaceChatPanel({ threadId, title, subtitle, otherParty }: 
     const res = await fetch(`/api/marketplace/chat/threads/${threadId}/messages`);
     const data = await res.json();
     if (res.ok) {
-      setMessages(data.messages ?? []);
+      const next: MarketplaceMessage[] = data.messages ?? [];
+      setMessages((prev) => {
+        if (
+          prev.length === next.length &&
+          prev[prev.length - 1]?.id === next[next.length - 1]?.id
+        ) {
+          return prev;
+        }
+        return next;
+      });
     }
     setLoading(false);
   }, [threadId]);
@@ -37,12 +47,16 @@ export function MarketplaceChatPanel({ threadId, title, subtitle, otherParty }: 
   useEffect(() => {
     setLoading(true);
     loadMessages();
-    const interval = setInterval(loadMessages, 4000);
-    return () => clearInterval(interval);
   }, [loadMessages]);
 
+  useVisibleInterval(loadMessages, 15_000);
+
+  const prevCountRef = useRef(0);
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messages.length > prevCountRef.current) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+    prevCountRef.current = messages.length;
   }, [messages]);
 
   const handleSend = async () => {
