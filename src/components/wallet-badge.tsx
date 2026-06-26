@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { Wallet, LogIn, BadgePercent } from 'lucide-react';
-import { isReseller, resolveAccountRole } from '@/lib/roles';
+import { Wallet, LogIn, BadgePercent, ShieldAlert } from 'lucide-react';
+import { canAccessModeratorPanel } from '@/lib/permissions';
+import { isReseller } from '@/lib/roles';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/components/auth-provider';
 import { formatBalanceForLocale } from '@/lib/currency';
@@ -28,9 +29,19 @@ export function WalletBadge() {
     );
   }
 
+  const accountRoles = profile?.roles ?? [];
+
   return (
     <div className="flex items-center gap-2">
-      {isReseller(resolveAccountRole(profile?.role, user)) && (
+      {canAccessModeratorPanel(accountRoles) && (
+        <Link href={localizedPath(locale, '/moderator')}>
+          <Button variant="secondary" size="sm" className="gap-1.5 font-semibold hidden sm:inline-flex">
+            <ShieldAlert className="h-4 w-4" />
+            {dict.nav.moderator}
+          </Button>
+        </Link>
+      )}
+      {isReseller(accountRoles) && (
         <Link href={localizedPath(locale, '/reseller')}>
           <Button variant="default" size="sm" className="gap-1.5 font-semibold hidden sm:inline-flex">
             <BadgePercent className="h-4 w-4" />

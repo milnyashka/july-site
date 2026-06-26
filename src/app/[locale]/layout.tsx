@@ -5,6 +5,7 @@ import { SiteFooter } from '@/components/layout/site-footer';
 import { Toaster } from '@/components/ui/toaster';
 import { I18nProvider } from '@/i18n/I18nProvider';
 import { AuthProvider } from '@/components/auth-provider';
+import { FrozenGuard } from '@/components/frozen-guard';
 import { getDictionary } from '@/i18n/get-dictionary';
 import { isLocale, locales, type Locale } from '@/i18n/config';
 import { notFound } from 'next/navigation';
@@ -51,11 +52,13 @@ export default async function LocaleLayout({
       <body className={cn('min-h-screen bg-background font-body antialiased')}>
         <I18nProvider locale={locale}>
           <AuthProvider>
-            <div className="relative flex min-h-dvh flex-col bg-background">
-              <SiteHeader />
-              <main className="flex-1">{children}</main>
-              <SiteFooter />
-            </div>
+            <FrozenGuard>
+              <div className="relative flex min-h-dvh flex-col bg-background">
+                <SiteHeader />
+                <main className="flex-1">{children}</main>
+                <SiteFooter />
+              </div>
+            </FrozenGuard>
             <Toaster />
           </AuthProvider>
         </I18nProvider>

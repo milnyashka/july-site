@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
 import type { Currency } from '@/lib/currency';
-import { resolveAccountRole, type AccountRole } from '@/lib/roles';
+import { getPrimaryRole, resolveAccountRoles, type AccountRole } from '@/lib/roles';
 import { getTierFromSpentUsd, sumPurchasesToUsd, type CustomerTier } from '@/lib/tiers';
 
 type Profile = {
@@ -13,8 +13,12 @@ type Profile = {
   currency: Currency;
   avatarUrl: string | null;
   role: AccountRole;
+  roles: AccountRole[];
   totalSpentUsd: number;
   tier: CustomerTier;
+  accountFrozen: boolean;
+  balanceFrozen: boolean;
+  accountFreezeReason: string | null;
 };
 
 type AuthContextValue = {
@@ -58,13 +62,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       currency: string;
       avatar_url: string | null;
       role?: string | null;
+      roles?: string[] | null;
+      account_frozen?: boolean | null;
+      balance_frozen?: boolean | null;
+      account_freeze_reason?: string | null;
     };
 
     let data: ProfileRow | null = null;
 
     const primary = await supabase
       .from('profiles')
-      .select('balance, email, currency, avatar_url, role')
+      .select('balance, email, currency, avatar_url, role, roles, account_frozen, balance_frozen, account_freeze_reason')
       .eq('id', currentUser.id)
       .maybeSingle();
 
@@ -89,7 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       const refetch = await supabase
         .from('profiles')
-        .select('balance, email, currency, avatar_url, role')
+        .select('balance, email, currency, avatar_url, role, roles, account_frozen, balance_frozen, account_freeze_reason')
         .eq('id', currentUser.id)
         .maybeSingle();
       data = refetch.data;
@@ -122,9 +130,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: data.email,
         currency,
         avatarUrl: data.avatar_url ?? null,
-        role: resolveAccountRole(data.role, currentUser),
+        roles: resolveAccountRoles(data.roles, data.role, currentUser),
+        role: getPrimaryRole(resolveAccountRoles(data.roles, data.role, currentUser)),
         totalSpentUsd,
         tier,
+        accountFrozen: Boolean(data.account_frozen),
+        balanceFrozen: Boolean(data.balance_frozen),
+        accountFreezeReason: data.account_freeze_reason ?? null,
       });
     } else {
       setProfile(null);

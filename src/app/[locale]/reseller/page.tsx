@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { GameProductCard } from '@/components/game-product-card';
 import { getVisibleGames } from '@/lib/game-catalog';
 import { useAuth } from '@/components/auth-provider';
-import { isReseller, resolveAccountRole } from '@/lib/roles';
+import { isReseller } from '@/lib/roles';
 import { useI18n } from '@/i18n/I18nProvider';
 import { localizedPath } from '@/i18n/localized-path';
 
@@ -18,19 +18,19 @@ export default function ResellerPage() {
   const { locale, dict } = useI18n();
   const t = dict.resellerPage;
   const router = useRouter();
-  const accountRole = resolveAccountRole(profile?.role, user);
+  const accountRoles = profile?.roles ?? [];
 
   useEffect(() => {
     if (!loading && !user) {
       router.push(localizedPath(locale, '/login'));
       return;
     }
-    if (!loading && user && !isReseller(accountRole)) {
+    if (!loading && user && (!isReseller(accountRoles) || profile?.accountFrozen)) {
       router.push(localizedPath(locale, '/account'));
     }
-  }, [user, accountRole, loading, router, locale]);
+  }, [user, accountRoles, profile?.accountFrozen, loading, router, locale]);
 
-  if (loading || !user || !isReseller(accountRole)) {
+  if (loading || !user || !isReseller(accountRoles) || profile?.accountFrozen) {
     return (
       <div className="container py-20 text-center text-muted-foreground">
         {dict.wallet.loading}

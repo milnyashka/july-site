@@ -36,7 +36,7 @@ begin
   end if;
 
   if p_reseller_pricing and v_role = 'reseller' then
-    v_price := round(v_price * 0.5, 2);
+    v_price := round(v_price * 0.6, 2);
   end if;
 
   select coalesce(sum(amount_usd), 0) into v_spent_usd

@@ -1,20 +1,44 @@
 import { NextResponse } from 'next/server';
-import { isAdminAuthenticated } from '@/lib/admin-auth';
+import { canAssignRole } from '@/lib/permissions';
+import {
+  ACCOUNT_ROLES,
+  getPrimaryRole,
+  isValidRole,
+  normalizeRoles,
+  type AccountRole,
+} from '@/lib/roles';
+import { requireOwnerAccess } from '@/lib/staff-auth';
 import { createServiceClient } from '@/lib/supabase/server';
 
-const VALID_ROLES = new Set(['user', 'reseller']);
-
 export async function POST(request: Request) {
-  if (!(await isAdminAuthenticated())) {
+  let staff;
+  try {
+    staff = await requireOwnerAccess();
+  } catch {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
 
-  const { email, role } = await request.json();
+  const body = await request.json();
+  const { email } = body;
+
   if (!email || typeof email !== 'string') {
     return NextResponse.json({ error: 'invalid_email' }, { status: 400 });
   }
-  if (!role || typeof role !== 'string' || !VALID_ROLES.has(role)) {
-    return NextResponse.json({ error: 'invalid_role' }, { status: 400 });
+
+  let rolesInput: unknown = body.roles;
+  if (!Array.isArray(rolesInput) && body.role) {
+    rolesInput = [body.role];
+  }
+
+  const roles = normalizeRoles(rolesInput);
+
+  for (const r of roles) {
+    if (!canAssignRole(staff.roles, r)) {
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+    }
+    if (!isValidRole(r)) {
+      return NextResponse.json({ error: 'invalid_role', allowed: ACCOUNT_ROLES }, { status: 400 });
+    }
   }
 
   let service;
@@ -25,11 +49,13 @@ export async function POST(request: Request) {
   }
 
   const normalizedEmail = email.toLowerCase().trim();
+  const primaryRole = getPrimaryRole(roles);
+
   const { data: profile, error: dbError } = await service
     .from('profiles')
-    .update({ role })
+    .update({ roles, role: primaryRole })
     .eq('email', normalizedEmail)
-    .select('id, email, balance, currency, role')
+    .select('id, email, balance, currency, role, roles, account_frozen, balance_frozen')
     .maybeSingle();
 
   if (dbError) {
@@ -44,7 +70,8 @@ export async function POST(request: Request) {
   const { error: metaError } = await service.auth.admin.updateUserById(profile.id, {
     user_metadata: {
       ...(authUser?.user?.user_metadata ?? {}),
-      role,
+      role: primaryRole,
+      roles: profile.roles,
     },
   });
 
@@ -53,7 +80,7 @@ export async function POST(request: Request) {
       error: 'metadata_update_failed',
       detail: metaError.message,
       email: profile.email,
-      role: profile.role === 'reseller' ? 'reseller' : 'user',
+      roles: normalizeRoles(profile.roles, profile.role),
     }, { status: 500 });
   }
 
@@ -61,6 +88,9 @@ export async function POST(request: Request) {
     email: profile.email,
     balance: Number(profile.balance),
     currency: profile.currency === 'rub' ? 'rub' : 'usd',
-    role: profile.role === 'reseller' ? 'reseller' : 'user',
+    role: profile.role,
+    roles: normalizeRoles(profile.roles, profile.role),
+    accountFrozen: Boolean(profile.account_frozen),
+    balanceFrozen: Boolean(profile.balance_frozen),
   });
 }

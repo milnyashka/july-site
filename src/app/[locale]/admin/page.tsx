@@ -3,11 +3,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Loader2, Lock, LogOut, Search, Wallet, BadgePercent } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import type { AccountRole } from '@/lib/roles';
+import { ASSIGNABLE_ROLES, normalizeRoles, type AccountRole } from '@/lib/roles';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ModeratorLogsPanel } from '@/components/moderator-logs-panel';
 import { formatMoney, type Currency } from '@/lib/currency';
 import { useI18n } from '@/i18n/I18nProvider';
 import { useToast } from '@/hooks/use-toast';
@@ -17,6 +19,18 @@ type UserInfo = {
   balance: number;
   currency: Currency;
   role: AccountRole;
+  roles: AccountRole[];
+  accountFrozen: boolean;
+  balanceFrozen: boolean;
+};
+
+const ROLE_DICT_KEYS: Record<AccountRole, keyof typeof import('@/i18n/dictionaries/ru').ru.admin> = {
+  owner: 'roleOwner',
+  moderator: 'roleModerator',
+  moderator_senior: 'roleModeratorSenior',
+  reseller: 'roleReseller',
+  user: 'roleUser',
+  seller: 'roleSeller',
 };
 
 export default function AdminPage() {
@@ -33,10 +47,16 @@ export default function AdminPage() {
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
   const [user, setUser] = useState<UserInfo | null>(null);
+  const [selectedRoles, setSelectedRoles] = useState<AccountRole[]>(['user']);
   const [lookupLoading, setLookupLoading] = useState(false);
   const [addLoading, setAddLoading] = useState(false);
   const [roleLoading, setRoleLoading] = useState(false);
   const [serviceReady, setServiceReady] = useState(true);
+
+  const roleLabel = (role: AccountRole) => {
+    const key = ROLE_DICT_KEYS[role];
+    return (t as Record<string, string>)[key] ?? role;
+  };
 
   const checkAuth = useCallback(async () => {
     const res = await fetch('/api/admin/me');
@@ -83,6 +103,38 @@ export default function AdminPage() {
     setUser(null);
   };
 
+  const mapUser = (data: Record<string, unknown>): UserInfo => ({
+    email: String(data.email),
+    balance: Number(data.balance),
+    currency: (data.currency === 'rub' ? 'rub' : 'usd') as Currency,
+    role: (data.role as AccountRole) ?? 'user',
+    roles: normalizeRoles(data.roles, data.role as string),
+    accountFrozen: Boolean(data.accountFrozen),
+    balanceFrozen: Boolean(data.balanceFrozen),
+  });
+
+  const toggleRole = (role: AccountRole, checked: boolean) => {
+    setSelectedRoles((prev) => {
+      if (role === 'owner') {
+        return checked ? ['owner'] : ['user'];
+      }
+      let next = checked ? [...prev.filter((r) => r !== 'owner'), role] : prev.filter((r) => r !== role);
+      if (role !== 'user' && !checked && next.length === 0) {
+        next = ['user'];
+      }
+      if (!next.includes('user') && !next.includes('owner')) {
+        next = [...next, 'user'];
+      }
+      return normalizeRoles(next);
+    });
+  };
+
+  const rolesEqual = (a: AccountRole[], b: AccountRole[]) => {
+    const sa = [...a].sort().join(',');
+    const sb = [...b].sort().join(',');
+    return sa === sb;
+  };
+
   const handleLookup = async () => {
     setLookupLoading(true);
     setUser(null);
@@ -105,25 +157,22 @@ export default function AdminPage() {
         });
         return;
       }
-      setUser({
-        email: data.email,
-        balance: data.balance,
-        currency: data.currency,
-        role: data.role === 'reseller' ? 'reseller' : 'user',
-      });
+      const mapped = mapUser(data);
+      setUser(mapped);
+      setSelectedRoles(mapped.roles);
     } finally {
       setLookupLoading(false);
     }
   };
 
-  const handleSetRole = async (role: AccountRole) => {
+  const handleSetRole = async () => {
     if (!email) return;
     setRoleLoading(true);
     try {
       const res = await fetch('/api/admin/set-role', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, role }),
+        body: JSON.stringify({ email, roles: selectedRoles }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -138,16 +187,9 @@ export default function AdminPage() {
         });
         return;
       }
-      setUser({
-        email: data.email,
-        balance: data.balance,
-        currency: data.currency,
-        role: data.role,
-      });
-      toast({
-        title: role === 'reseller' ? t.resellerGranted : t.resellerRevoked,
-        description: data.email,
-      });
+      setUser(mapUser(data));
+      const labels = selectedRoles.map(roleLabel).join(' + ');
+      toast({ title: t.roleUpdated, description: `${data.email} → ${labels}` });
     } finally {
       setRoleLoading(false);
     }
@@ -176,12 +218,19 @@ export default function AdminPage() {
         return;
       }
       const currency = data.currency as Currency;
-      setUser({
-        email: data.email,
-        balance: data.balance,
-        currency,
-        role: user?.role ?? 'user',
-      });
+      setUser((prev) =>
+        prev
+          ? { ...prev, email: data.email, balance: data.balance, currency }
+          : {
+              email: data.email,
+              balance: data.balance,
+              currency,
+              role: 'user',
+              roles: ['user'],
+              accountFrozen: false,
+              balanceFrozen: false,
+            }
+      );
       setAmount('');
       toast({
         title: t.success,
@@ -289,38 +338,56 @@ export default function AdminPage() {
               <p className="text-2xl font-bold text-primary">
                 {formatMoney(user.balance, user.currency)}
               </p>
-              <Badge variant={user.role === 'reseller' ? 'default' : 'secondary'}>
-                {user.role === 'reseller' ? t.roleReseller : t.roleUser}
-              </Badge>
-              <div className="flex gap-2">
-                {user.role === 'reseller' ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="flex-1"
-                    disabled={roleLoading}
-                    onClick={() => handleSetRole('user')}
-                  >
-                    {roleLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : t.revokeReseller}
-                  </Button>
-                ) : (
-                  <Button
-                    type="button"
-                    className="flex-1"
-                    disabled={roleLoading}
-                    onClick={() => handleSetRole('reseller')}
-                  >
-                    {roleLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <>
-                        <BadgePercent className="mr-2 h-4 w-4" />
-                        {t.grantReseller}
-                      </>
-                    )}
-                  </Button>
-                )}
+              <div className="flex flex-wrap justify-center gap-1">
+                {user.roles.map((r) => (
+                  <Badge key={r} variant="default">{roleLabel(r)}</Badge>
+                ))}
               </div>
+              {(user.accountFrozen || user.balanceFrozen) && (
+                <div className="flex flex-wrap justify-center gap-1">
+                  {user.accountFrozen && <Badge variant="destructive">{t.frozenAccount}</Badge>}
+                  {user.balanceFrozen && <Badge variant="destructive">{t.frozenBalance}</Badge>}
+                </div>
+              )}
+              <div className="space-y-3 text-left">
+                <Label>{t.setRoles}</Label>
+                <p className="text-xs text-muted-foreground">{t.setRolesHint}</p>
+                <div className="grid grid-cols-1 gap-2">
+                  {ASSIGNABLE_ROLES.map((r) => (
+                    <label
+                      key={r}
+                      className="flex items-center gap-2 rounded-md border border-border/50 px-3 py-2 cursor-pointer hover:bg-muted/40"
+                    >
+                      <Checkbox
+                        checked={selectedRoles.includes(r)}
+                        disabled={selectedRoles.includes('owner') && r !== 'owner'}
+                        onCheckedChange={(v) => toggleRole(r, v === true)}
+                      />
+                      <span className="text-sm">{roleLabel(r)}</span>
+                    </label>
+                  ))}
+                </div>
+                <Button
+                  type="button"
+                  className="w-full"
+                  disabled={roleLoading || rolesEqual(selectedRoles, user.roles)}
+                  onClick={handleSetRole}
+                >
+                  {roleLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <BadgePercent className="mr-2 h-4 w-4" />
+                      {t.saveRoles}
+                    </>
+                  )}
+                </Button>
+              </div>
+              {(selectedRoles.includes('moderator') || selectedRoles.includes('moderator_senior')) && (
+                <p className="text-xs text-muted-foreground text-left pt-2 border-t border-border/50">
+                  {t.moderatorRoleHint}
+                </p>
+              )}
             </div>
           )}
         </CardContent>
@@ -375,6 +442,10 @@ export default function AdminPage() {
           </form>
         </CardContent>
       </Card>
+
+      <div className="mt-8">
+        <ModeratorLogsPanel />
+      </div>
     </div>
   );
 }

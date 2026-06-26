@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Wallet, KeyRound, LogOut, ArrowRight, ChevronRight, Shield } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { isReseller, resolveAccountRole } from '@/lib/roles';
+import { isReseller, isSeller, isModerator } from '@/lib/roles';
 import { LicenseKeyCard } from '@/components/license-key-card';
 import { CustomerTierCard, TIER_STYLES } from '@/components/customer-tier-card';
 import { cn } from '@/lib/utils';
@@ -103,6 +103,8 @@ export default function AccountPage() {
     return labels[id] ?? id;
   };
 
+  const accountRoles = profile?.roles ?? [];
+
   return (
     <div className="container py-12 md:py-20 max-w-3xl">
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -120,11 +122,25 @@ export default function AccountPage() {
                   {(dict.wallet.tiers as Record<string, string>)[profile.tier]}
                 </Badge>
               )}
-              {isReseller(resolveAccountRole(profile?.role, user)) && (
+              {isReseller(accountRoles) && !profile?.accountFrozen && (
                 <Link href={localizedPath(locale, '/reseller')}>
                   <Badge className="gap-1 uppercase tracking-wider text-xs cursor-pointer hover:bg-primary/90">
                     <Shield className="h-3 w-3" />
                     {t.resellerBadge}
+                    <ChevronRight className="h-3 w-3" />
+                  </Badge>
+                </Link>
+              )}
+              {isSeller(accountRoles) && (
+                <Badge variant="outline" className="text-xs uppercase tracking-wider">
+                  {t.sellerBadge}
+                </Badge>
+              )}
+              {isModerator(accountRoles) && (
+                <Link href={localizedPath(locale, '/moderator')}>
+                  <Badge variant="secondary" className="gap-1 text-xs uppercase tracking-wider cursor-pointer hover:bg-secondary/80">
+                    <Shield className="h-3 w-3" />
+                    {t.moderatorBadge}
                     <ChevronRight className="h-3 w-3" />
                   </Badge>
                 </Link>
@@ -138,6 +154,12 @@ export default function AccountPage() {
           {t.logout}
         </Button>
       </div>
+
+      {profile?.balanceFrozen && !profile.accountFrozen && (
+        <div className="mb-6 rounded-lg border border-amber-500/50 bg-amber-500/10 p-4 text-sm text-amber-200">
+          {t.balanceFrozen}
+        </div>
+      )}
 
       {profile && (
         <div className="mb-6">

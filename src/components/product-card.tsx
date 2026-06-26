@@ -56,7 +56,7 @@ export function ProductCard({ product, reseller }: ProductCardProps) {
           <div className="absolute top-4 left-4 flex flex-col gap-1.5">
             {reseller && (
               <Badge className="bg-primary/80 backdrop-blur-sm text-xs uppercase tracking-wider">
-                {dict.resellerPage.badge} −50%
+                {dict.resellerPage.badge} −40%
               </Badge>
             )}
             {product.tags.map(tag => (

@@ -1,5 +1,5 @@
 import type { Plan } from '@/lib/plans';
-import { getPlanPrice } from '@/lib/plans';
+import { getPlanPrice, RESELLER_DISCOUNT } from '@/lib/plans';
 import type { Currency } from '@/lib/currency';
 import { rubToUsd } from '@/lib/currency';
 
@@ -68,7 +68,7 @@ export function applyPurchaseDiscounts(
 ): number {
   let amount = price;
   if (opts.reseller) {
-    amount = Math.round(amount * 0.5 * 100) / 100;
+    amount = Math.round(amount * RESELLER_DISCOUNT * 100) / 100;
   }
   return applyTierDiscount(amount, opts.tier ?? 'basic');
 }

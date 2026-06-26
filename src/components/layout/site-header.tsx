@@ -10,7 +10,8 @@ import { Icon } from "../icons";
 import { LanguageSwitcher } from "../language-switcher";
 import { WalletBadge } from "../wallet-badge";
 import { useAuth } from "@/components/auth-provider";
-import { isReseller, resolveAccountRole } from "@/lib/roles";
+import { canAccessModeratorPanel } from "@/lib/permissions";
+import { isReseller } from "@/lib/roles";
 import { useI18n } from "@/i18n/I18nProvider";
 import { localizedPath } from "@/i18n/localized-path";
 
@@ -18,12 +19,13 @@ export function SiteHeader() {
   const pathname = usePathname();
   const { locale, dict } = useI18n();
   const { user, profile } = useAuth();
-  const accountRole = resolveAccountRole(profile?.role, user);
+  const accountRoles = profile?.roles ?? [];
 
   const navLinks = [
     { name: dict.nav.home, href: "/" },
     { name: dict.nav.products, href: "/products" },
-    ...(user && isReseller(accountRole) ? [{ name: dict.nav.reseller, href: "/reseller" }] : []),
+    ...(user && isReseller(accountRoles) ? [{ name: dict.nav.reseller, href: "/reseller" }] : []),
+    ...(user && canAccessModeratorPanel(accountRoles) ? [{ name: dict.nav.moderator, href: "/moderator" }] : []),
     { name: dict.nav.download, href: "/download" },
     { name: dict.nav.reviews, href: "/reviews" },
     { name: dict.nav.status, href: "/status" },

@@ -1,7 +1,8 @@
 import type { Locale } from '@/i18n/config';
 import { currencyForLocale, type Currency } from '@/lib/currency';
 
-export const RESELLER_DISCOUNT = 0.5;
+/** Reseller платит 60% от розницы (−40%) */
+export const RESELLER_DISCOUNT = 0.6;
 
 export type PlanId = '3h' | '6h' | '12h' | '1d' | '7d' | '14d' | '30d';
 

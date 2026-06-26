@@ -17,9 +17,16 @@ export async function POST(request: Request) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('currency')
+    .select('currency, account_frozen, balance_frozen')
     .eq('id', user.id)
     .single();
+
+  if (profile?.account_frozen) {
+    return NextResponse.json({ error: 'account_frozen' }, { status: 403 });
+  }
+  if (profile?.balance_frozen) {
+    return NextResponse.json({ error: 'balance_frozen' }, { status: 403 });
+  }
 
   const currency = profile?.currency === 'rub' ? 'rub' : 'usd';
 

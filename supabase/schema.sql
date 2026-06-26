@@ -6,7 +6,13 @@ create table if not exists public.profiles (
   balance numeric(10, 2) not null default 0 check (balance >= 0),
   currency text not null default 'usd' check (currency in ('rub', 'usd')),
   avatar_url text,
-  role text not null default 'user' check (role in ('user', 'reseller')),
+  role text not null default 'user' check (
+    role in ('owner', 'moderator', 'moderator_senior', 'reseller', 'user', 'seller')
+  ),
+  account_frozen boolean not null default false,
+  balance_frozen boolean not null default false,
+  account_freeze_reason text,
+  licenses_hidden boolean not null default false,
   created_at timestamptz not null default now()
 );
 
@@ -128,7 +134,7 @@ begin
   end if;
 
   if p_reseller_pricing and v_role = 'reseller' then
-    v_price := round(v_price * 0.5, 2);
+    v_price := round(v_price * 0.6, 2);
   end if;
 
   select coalesce(sum(amount_usd), 0) into v_spent_usd
@@ -208,6 +214,18 @@ begin
   return json_build_object('success', true);
 end;
 $$;
+
+create table if not exists public.marketplace_listings (
+  id uuid primary key default gen_random_uuid(),
+  seller_id uuid not null references public.profiles (id) on delete cascade,
+  title text not null,
+  description text not null default '',
+  price numeric(10, 2) not null check (price > 0),
+  currency text not null default 'usd' check (currency in ('rub', 'usd')),
+  status text not null default 'draft' check (status in ('draft', 'active', 'sold', 'cancelled')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
 
 -- RLS (safe to re-run)
 alter table public.profiles enable row level security;
