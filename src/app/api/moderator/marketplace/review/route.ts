@@ -12,7 +12,8 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const purchaseId = typeof body.purchaseId === 'string' ? body.purchaseId : '';
-    const action = body.action === 'reject' ? 'reject' : 'approve';
+    const actionRaw = body.action;
+    const action = actionRaw === 'reject' || actionRaw === 'refund' ? actionRaw : 'approve';
     const reason = typeof body.reason === 'string' ? body.reason.trim() : '';
 
     if (!purchaseId) {
@@ -20,14 +21,29 @@ export async function POST(request: Request) {
     }
 
     const service = createServiceClient();
-    const rpcName =
-      action === 'reject' ? 'reject_marketplace_purchase' : 'approve_marketplace_purchase';
 
-    const { data, error } = await service.rpc(rpcName, {
-      p_purchase_id: purchaseId,
-      p_reviewer_id: staff.userId,
-      ...(action === 'reject' ? { p_reason: reason || null } : {}),
-    });
+    let data: any;
+    let error: any;
+
+    if (action === 'refund') {
+      const res = await service.rpc('refund_marketplace_purchase', {
+        p_purchase_id: purchaseId,
+        p_actor_id: staff.userId,
+        p_reason: reason || null,
+      });
+      data = res.data;
+      error = res.error;
+    } else {
+      const rpcName =
+        action === 'reject' ? 'reject_marketplace_purchase' : 'approve_marketplace_purchase';
+      const res = await service.rpc(rpcName, {
+        p_purchase_id: purchaseId,
+        p_reviewer_id: staff.userId,
+        ...(action === 'reject' ? { p_reason: reason || null } : {}),
+      });
+      data = res.data;
+      error = res.error;
+    }
 
     if (error) {
       return NextResponse.json({ error: 'server_error', detail: error.message }, { status: 500 });

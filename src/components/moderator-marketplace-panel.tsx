@@ -47,7 +47,7 @@ export function ModeratorMarketplacePanel() {
     void load();
   }, [load]);
 
-  const handleAction = async (purchaseId: string, action: 'approve' | 'reject') => {
+  const handleAction = async (purchaseId: string, action: 'approve' | 'reject' | 'refund') => {
     setProcessingId(purchaseId);
     try {
       const res = await fetch('/api/moderator/marketplace/review', {
@@ -63,7 +63,8 @@ export function ModeratorMarketplacePanel() {
         toast({ title: t.error, variant: 'destructive' });
         return;
       }
-      toast({ title: action === 'approve' ? t.approved : t.rejected });
+      const title = action === 'approve' ? t.approved : action === 'refund' ? t.refunded : t.rejected;
+      toast({ title });
       setPurchases((prev) => prev.filter((p) => p.id !== purchaseId));
     } finally {
       setProcessingId(null);
@@ -71,7 +72,7 @@ export function ModeratorMarketplacePanel() {
   };
 
   const showActions = (p: DealPurchase) =>
-    filter === 'needs_help' || p.status === 'disputed' || p.status === 'pending_review';
+    p.status !== 'refunded';
 
   return (
     <Card className="bg-card/80 border-border/50">
@@ -142,28 +143,41 @@ export function ModeratorMarketplacePanel() {
                       setRejectReason((prev) => ({ ...prev, [p.id]: e.target.value }))
                     }
                   />
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      disabled={processingId === p.id}
-                      onClick={() => handleAction(p.id, 'approve')}
-                    >
-                      {processingId === p.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Check className="mr-2 h-4 w-4" />
-                      )}
-                      {t.approve}
-                    </Button>
+                  <div className="flex gap-2 flex-wrap">
+                    {(p.status === 'pending_review' || p.status === 'disputed' || p.status === 'open') && (
+                      <Button
+                        size="sm"
+                        disabled={processingId === p.id}
+                        onClick={() => handleAction(p.id, 'approve')}
+                      >
+                        {processingId === p.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Check className="mr-2 h-4 w-4" />
+                        )}
+                        {t.approve}
+                      </Button>
+                    )}
                     <Button
                       size="sm"
                       variant="destructive"
                       disabled={processingId === p.id}
-                      onClick={() => handleAction(p.id, 'reject')}
+                      onClick={() => handleAction(p.id, 'refund')}
                     >
                       <X className="mr-2 h-4 w-4" />
-                      {t.reject}
+                      {t.refund}
                     </Button>
+                    {p.status !== 'completed' && p.status !== 'refunded' && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={processingId === p.id}
+                        onClick={() => handleAction(p.id, 'reject')}
+                      >
+                        <X className="mr-2 h-4 w-4" />
+                        {t.reject}
+                      </Button>
+                    )}
                   </div>
                 </>
               )}

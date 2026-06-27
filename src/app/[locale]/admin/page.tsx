@@ -144,7 +144,7 @@ export default function AdminPage() {
       const res = await fetch('/api/admin/lookup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ identifier: email }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -162,6 +162,7 @@ export default function AdminPage() {
       const mapped = mapUser(data);
       setUser(mapped);
       setSelectedRoles(mapped.roles);
+      if (data.email) setEmail(String(data.email));
     } finally {
       setLookupLoading(false);
     }
@@ -321,8 +322,8 @@ export default function AdminPage() {
             <Label htmlFor="email">{t.email}</Label>
             <Input
               id="email"
-              type="email"
-              placeholder="user@email.com"
+              type="text"
+              placeholder="user@email.com or TraderName"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />

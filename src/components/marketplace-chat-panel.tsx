@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import type { MarketplaceMessage, MarketplacePartyPreview } from '@/lib/marketplace';
 import { SellerProfileChip } from '@/components/seller-profile-chip';
 import { useI18n } from '@/i18n/I18nProvider';
+import { useToast } from '@/hooks/use-toast';
 
 type Props = {
   threadId: string;
@@ -20,6 +21,7 @@ type Props = {
 export function MarketplaceChatPanel({ threadId, title, subtitle, otherParty }: Props) {
   const { dict } = useI18n();
   const c = dict.marketplace.chat;
+  const { toast } = useToast();
   const [messages, setMessages] = useState<MarketplaceMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -38,11 +40,37 @@ export function MarketplaceChatPanel({ threadId, title, subtitle, otherParty }: 
         ) {
           return prev;
         }
+        // Detect new incoming messages from the other party
+        if (prev.length > 0) {
+          const prevIds = new Set(prev.map((m) => m.id));
+          const incoming = next.filter((m) => !prevIds.has(m.id) && !m.isMine);
+          if (incoming.length > 0) {
+            const last = incoming[incoming.length - 1];
+            const notifTitle = c.newMessage || 'New message';
+            toast({
+              title: notifTitle,
+              description: last.body.length > 120 ? last.body.slice(0, 117) + '...' : last.body,
+            });
+            // Browser notification if tab hidden and permission granted
+            if (
+              typeof window !== 'undefined' &&
+              'Notification' in window &&
+              Notification.permission === 'granted' &&
+              document.visibilityState !== 'visible'
+            ) {
+              try {
+                new Notification(notifTitle, {
+                  body: last.body.slice(0, 200),
+                });
+              } catch {}
+            }
+          }
+        }
         return next;
       });
     }
     setLoading(false);
-  }, [threadId]);
+  }, [threadId, toast, c]);
 
   useEffect(() => {
     setLoading(true);

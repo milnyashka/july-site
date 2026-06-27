@@ -38,7 +38,8 @@ export async function POST(request: Request) {
   });
 
   if (error) {
-    return NextResponse.json({ error: 'server_error' }, { status: 500 });
+    console.error('[wallet/purchase] purchase_plan rpc failed:', error.message);
+    return NextResponse.json({ error: 'server_error', detail: error.message }, { status: 500 });
   }
 
   if (data?.error) {

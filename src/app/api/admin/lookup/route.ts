@@ -10,8 +10,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
 
-  const { email } = await request.json();
-  if (!email || typeof email !== 'string') {
+  const body = await request.json();
+  const identifier = String(body.identifier ?? body.email ?? '').trim();
+  if (!identifier) {
     return NextResponse.json({ error: 'invalid_email' }, { status: 400 });
   }
 
@@ -22,12 +23,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'service_not_configured' }, { status: 503 });
   }
 
-  const normalizedEmail = email.toLowerCase().trim();
-  const { data: profile, error: dbError } = await service
+  const isEmail = identifier.includes('@');
+  const normalized = isEmail ? identifier.toLowerCase() : identifier;
+
+  let profileQuery = service
     .from('profiles')
-    .select('id, email, balance, currency, role, roles, account_frozen, balance_frozen, created_at')
-    .eq('email', normalizedEmail)
-    .maybeSingle();
+    .select('id, email, balance, currency, role, roles, account_frozen, balance_frozen, created_at');
+
+  if (isEmail) {
+    profileQuery = profileQuery.eq('email', normalized);
+  } else {
+    profileQuery = profileQuery.ilike('username', normalized);
+  }
+
+  const { data: profile, error: dbError } = await profileQuery.maybeSingle();
 
   if (dbError) {
     return NextResponse.json({ error: 'server_error', detail: dbError.message }, { status: 500 });

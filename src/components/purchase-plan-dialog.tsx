@@ -19,6 +19,7 @@ import { useAuth } from '@/components/auth-provider';
 import { useI18n } from '@/i18n/I18nProvider';
 import { localizedPath } from '@/i18n/localized-path';
 import { useToast } from '@/hooks/use-toast';
+import { purchaseErrorMessage } from '@/lib/purchase-errors';
 import { cn } from '@/lib/utils';
 
 interface PurchasePlanDialogProps {
@@ -76,14 +77,18 @@ export function PurchasePlanDialog({ open, onOpenChange, reseller }: PurchasePla
           router.push(localizedPath(locale, '/wallet/topup'));
           return;
         }
-        throw new Error(data.error);
+        throw new Error(data.error ?? 'unknown');
       }
 
       setPurchasedKey(data.key);
       await refreshProfile({ full: true, force: true });
       toast({ title: w.purchaseSuccess, description: w.keyDelivered });
-    } catch {
-      toast({ title: w.purchaseFailed, variant: 'destructive' });
+    } catch (err) {
+      const code = err instanceof Error ? err.message : undefined;
+      toast({
+        title: purchaseErrorMessage(code, w.purchaseErrors, w.purchaseFailed),
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }

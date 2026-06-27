@@ -123,7 +123,7 @@ export default function ModeratorPage() {
       const res = await fetch('/api/moderator/lookup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ identifier: email }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -141,6 +141,7 @@ export default function ModeratorPage() {
         return;
       }
       setTarget(mapTarget(data));
+      if (data.email) setEmail(String(data.email));
     } finally {
       setLookupLoading(false);
     }
@@ -288,8 +289,8 @@ export default function ModeratorPage() {
             <Label htmlFor="mod-email">{t.email}</Label>
             <Input
               id="mod-email"
-              type="email"
-              placeholder="user@email.com"
+              type="text"
+              placeholder="user@email.com or TraderName"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />

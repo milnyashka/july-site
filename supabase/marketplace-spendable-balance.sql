@@ -385,7 +385,8 @@ begin
     return json_build_object('error', 'no_keys');
   end if;
 
-  update license_keys set used = true, used_by = p_user_id, used_at = now()
+  update license_keys
+  set used = true, assigned_to = p_user_id, assigned_at = now()
   where id = v_key_id;
 
   update profiles set balance = balance - v_price where id = p_user_id;
