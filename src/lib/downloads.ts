@@ -63,7 +63,7 @@ export const downloads: DownloadItem[] = [
     version: '1.0',
     size: 'ZIP',
     platform: 'Windows',
-    url: 'https://github.com/milnyashka/Jul-W-b/releases/download/v1.0/jule.zip',
+      url: 'https://github.com/milnyashka/Jul-W-b/releases/download/v1.0/julehax.rar',
     requiresKey: true,
   },
 ];
