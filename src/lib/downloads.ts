@@ -58,12 +58,12 @@ export const downloads: DownloadItem[] = [
   {
     id: 'jule-hack',
     name: 'Jule Hack',
-    fileName: 'Jule-Hack.1.zip',
+    fileName: 'jule.zip',
     description: 'Jule Hack build — main package. Active license required.',
     version: '1.0',
     size: 'ZIP',
     platform: 'Windows',
-    url: 'https://github.com/milnyashka/Jul-W-b/releases/download/v1.0/Jule-Hack.1.zip',
+    url: 'https://github.com/milnyashka/Jul-W-b/releases/download/v1.0/jule.zip',
     requiresKey: true,
   },
 ];
