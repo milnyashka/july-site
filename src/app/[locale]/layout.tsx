@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Script from 'next/script';
 import { cn } from '@/lib/utils';
 import { SiteHeader } from '@/components/layout/site-header';
 import { SiteFooter } from '@/components/layout/site-footer';
@@ -47,6 +48,12 @@ export default async function LocaleLayout({
         <link
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
           rel="stylesheet"
+        />
+        {/* Google AdSense Main Script */}
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6910725183348370"
+          crossOrigin="anonymous"
         />
       </head>
       <body className={cn('min-h-screen bg-background font-body antialiased')}>
