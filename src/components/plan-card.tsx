@@ -34,9 +34,11 @@ export function PlanCard({ plan, label, durationLabel, popular, reseller }: Plan
   const t = dict.wallet;
   const displayCurrency = currencyForLocale(locale);
   const basePrice = getPlanPrice(plan, displayCurrency);
+  const hasReferralDiscount = Boolean(profile?.referredByCode && (profile?.discountedPurchasesCount ?? 0) < 3);
   const price = getFinalPlanPrice(plan, displayCurrency, {
     reseller,
     tier: profile?.tier ?? 'basic',
+    hasReferralDiscount,
   });
 
   const handlePurchase = async () => {

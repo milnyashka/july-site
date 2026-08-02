@@ -55,10 +55,37 @@ export default function AdminPage() {
   const [roleLoading, setRoleLoading] = useState(false);
   const [serviceReady, setServiceReady] = useState(true);
 
+  type PromoItem = {
+    id: string;
+    code: string;
+    ownerEmail: string;
+    discountPercent: number;
+    commissionPercent: number;
+    maxDiscountedPurchases: number;
+    referredCount: number;
+    totalEarned: number;
+    createdAt: string;
+  };
+
+  const [promocodes, setPromocodes] = useState<PromoItem[]>([]);
+  const [promoCodeInput, setPromoCodeInput] = useState('');
+  const [promoOwnerEmailInput, setPromoOwnerEmailInput] = useState('');
+  const [createPromoLoading, setCreatePromoLoading] = useState(false);
+
   const roleLabel = (role: AccountRole) => {
     const key = ROLE_DICT_KEYS[role];
     return (t as Record<string, string>)[key] ?? role;
   };
+
+  const loadPromocodes = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/promocodes');
+      if (res.ok) {
+        const data = await res.json();
+        setPromocodes(data.promocodes ?? []);
+      }
+    } catch {}
+  }, []);
 
   const checkAuth = useCallback(async () => {
     const res = await fetch('/api/admin/me');
@@ -77,7 +104,42 @@ export default function AdminPage() {
       .then((r) => r.json())
       .then((d) => setServiceReady(Boolean(d.serviceConfigured)))
       .catch(() => setServiceReady(false));
-  }, [authenticated]);
+    loadPromocodes();
+  }, [authenticated, loadPromocodes]);
+
+  const handleCreatePromo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreatePromoLoading(true);
+    try {
+      const res = await fetch('/api/admin/promocodes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: promoCodeInput, ownerEmail: promoOwnerEmailInput }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast({
+          title:
+            data.error === 'user_not_found'
+              ? (locale === 'ru' ? 'Пользователь не найден' : 'User not found')
+              : data.error === 'code_exists'
+                ? (locale === 'ru' ? 'Промокод уже существует' : 'Promo code already exists')
+                : (locale === 'ru' ? 'Ошибка создания' : 'Creation error'),
+          variant: 'destructive',
+        });
+        return;
+      }
+      toast({
+        title: locale === 'ru' ? 'Промокод успешно создан!' : 'Promo code created!',
+        description: `${data.promocode.code} -> ${data.promocode.ownerEmail}`,
+      });
+      setPromoCodeInput('');
+      setPromoOwnerEmailInput('');
+      loadPromocodes();
+    } finally {
+      setCreatePromoLoading(false);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -445,6 +507,77 @@ export default function AdminPage() {
               {t.confirmAdd}
             </Button>
           </form>
+        </CardContent>
+      </Card>
+
+      <Card className="bg-card/80 border-border/50">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <BadgePercent className="h-5 w-5" />
+            {locale === 'ru' ? 'Реферальные промокоды (15% скидка / 15% доход)' : 'Referral Promo Codes (15% discount / 15% earn)'}
+          </CardTitle>
+          <CardDescription>
+            {locale === 'ru'
+              ? 'Создайте персональный промокод для стримера/партнера. Новый юзер получит 15% скидку на 3 покупки, а партнер — 15% с каждой покупки на свой баланс.'
+              : 'Create a personal promo code for a partner. New user gets 15% off first 3 purchases, partner gets 15% from every purchase.'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <form onSubmit={handleCreatePromo} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="promo-code">{locale === 'ru' ? 'Промокод' : 'Promo Code'}</Label>
+                <Input
+                  id="promo-code"
+                  type="text"
+                  placeholder="JULY2026"
+                  value={promoCodeInput}
+                  onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="promo-owner">{locale === 'ru' ? 'Email владельца' : 'Owner Email'}</Label>
+                <Input
+                  id="promo-owner"
+                  type="email"
+                  placeholder="partner@gmail.com"
+                  value={promoOwnerEmailInput}
+                  onChange={(e) => setPromoOwnerEmailInput(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+            <Button type="submit" className="w-full" disabled={createPromoLoading || !promoCodeInput || !promoOwnerEmailInput}>
+              {createPromoLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {locale === 'ru' ? 'Создать реферальный промокод' : 'Create Referral Promo Code'}
+            </Button>
+          </form>
+
+          {promocodes.length > 0 && (
+            <div className="space-y-3 pt-4 border-t border-border/50">
+              <h4 className="font-semibold text-sm">
+                {locale === 'ru' ? 'Активные реферальные промокоды:' : 'Active Referral Promo Codes:'}
+              </h4>
+              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                {promocodes.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 rounded-lg border border-border/50 bg-muted/20 text-xs"
+                  >
+                    <div>
+                      <span className="font-mono font-bold text-primary text-sm mr-2">{item.code}</span>
+                      <span className="text-muted-foreground">({item.ownerEmail})</span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3 text-muted-foreground">
+                      <span>👥 {locale === 'ru' ? 'Привлечено:' : 'Referred:'} <strong className="text-foreground">{item.referredCount}</strong></span>
+                      <span>💰 {locale === 'ru' ? 'Заработано:' : 'Earned:'} <strong className="text-emerald-400">${item.totalEarned.toFixed(2)}</strong></span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

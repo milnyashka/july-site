@@ -27,8 +27,9 @@ export function ProductCard({ product, reseller }: ProductCardProps) {
   const displayCurrency = currencyForLocale(locale);
   const tier = profile?.tier ?? 'basic';
 
+  const hasReferralDiscount = Boolean(profile?.referredByCode && (profile?.discountedPurchasesCount ?? 0) < 3);
   const prices = plans.map((plan) =>
-    getFinalPlanPrice(plan, displayCurrency, { reseller, tier })
+    getFinalPlanPrice(plan, displayCurrency, { reseller, tier, hasReferralDiscount })
   );
   const min = Math.min(...prices);
   const max = Math.max(...prices);

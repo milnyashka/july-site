@@ -43,9 +43,10 @@ export function PurchasePlanDialog({ open, onOpenChange, reseller }: PurchasePla
   const [bonusKey, setBonusKey] = useState<string | null>(null);
 
   const tier = profile?.tier ?? 'basic';
+  const hasReferralDiscount = Boolean(profile?.referredByCode && (profile?.discountedPurchasesCount ?? 0) < 3);
   const selected = plans.find((p) => p.id === selectedId)!;
   const priceForPlan = (plan: typeof selected) =>
-    getFinalPlanPrice(plan, displayCurrency, { reseller, tier });
+    getFinalPlanPrice(plan, displayCurrency, { reseller, tier, hasReferralDiscount });
   const selectedPrice = priceForPlan(selected);
   const planLabels = dict.wallet.plans;
   const planDurations = dict.wallet.planDurations;

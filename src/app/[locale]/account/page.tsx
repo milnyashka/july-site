@@ -252,6 +252,24 @@ export default function AccountPage() {
         </div>
       )}
 
+      {profile?.referredByCode && (profile?.discountedPurchasesCount ?? 0) < 3 && (
+        <div className="mb-6 rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-4 text-sm flex items-center justify-between">
+          <div>
+            <p className="font-bold text-emerald-300">
+              🎁 {locale === 'ru' ? `Активна скидка 15% по промокоду ${profile.referredByCode}` : `15% discount active via promo code ${profile.referredByCode}`}
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {locale === 'ru'
+                ? `Осталось покупок со скидкой 15%: ${3 - (profile.discountedPurchasesCount ?? 0)} из 3`
+                : `Discounted purchases remaining: ${3 - (profile.discountedPurchasesCount ?? 0)} of 3`}
+            </p>
+          </div>
+          <span className="text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-2.5 py-1 rounded-md">
+            -15%
+          </span>
+        </div>
+      )}
+
       <div className="space-y-8">
         <section>
           <h2 className="text-xl font-semibold font-headline mb-4 flex items-center gap-2">

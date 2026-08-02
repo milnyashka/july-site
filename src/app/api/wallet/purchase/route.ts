@@ -94,6 +94,69 @@ export async function POST(request: Request) {
     }
   }
 
+  // Process Referral Promo Code Commission (15% to promo code owner)
+  try {
+    const dbClient = isServiceConfigured() ? createServiceClient() : supabase;
+
+    const { data: userProfile } = await dbClient
+      .from('profiles')
+      .select('referred_by_owner_id, discounted_purchases_count')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (userProfile?.referred_by_owner_id) {
+      const ownerId = userProfile.referred_by_owner_id;
+      const count = Number(userProfile.discounted_purchases_count || 0);
+
+      // Increment discounted_purchases_count if under 3
+      if (count < 3) {
+        await dbClient
+          .from('profiles')
+          .update({ discounted_purchases_count: count + 1 })
+          .eq('id', user.id);
+      }
+
+      // Fetch amount paid for latest purchase
+      const { data: latestPurchase } = await dbClient
+        .from('purchases')
+        .select('amount, currency')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const paidAmount = Number(latestPurchase?.amount || 0);
+      if (paidAmount > 0) {
+        const commission = Math.round(paidAmount * 0.15 * 100) / 100;
+        if (commission > 0) {
+          // Get owner balance & add commission
+          const { data: ownerProfile } = await dbClient
+            .from('profiles')
+            .select('balance')
+            .eq('id', ownerId)
+            .maybeSingle();
+
+          if (ownerProfile) {
+            const newOwnerBal = Math.round((Number(ownerProfile.balance || 0) + commission) * 100) / 100;
+            await dbClient
+              .from('profiles')
+              .update({ balance: newOwnerBal })
+              .eq('id', ownerId);
+
+            await dbClient.from('transactions').insert({
+              user_id: ownerId,
+              type: 'referral_commission',
+              amount: commission,
+              description: `Реферальные 15% с покупки пользователя ${user.id.slice(0, 8)}`,
+            });
+          }
+        }
+      }
+    }
+  } catch (refErr) {
+    console.error('[wallet/purchase] Referral commission error:', refErr);
+  }
+
   return NextResponse.json({
     success: true,
     key: data.key,

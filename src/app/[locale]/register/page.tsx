@@ -32,6 +32,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
+  const [promoCode, setPromoCode] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
@@ -82,6 +83,7 @@ export default function RegisterPage() {
         data: {
           currency: locale === 'ru' ? 'rub' : 'usd',
           username: normalizedUsername,
+          promoCode: promoCode.trim().toUpperCase() || undefined,
         },
       },
     });
@@ -90,6 +92,16 @@ export default function RegisterPage() {
       setError(translateAuthError(authError.message, t));
       setLoading(false);
       return;
+    }
+
+    if (promoCode.trim()) {
+      try {
+        await fetch('/api/profile/promocode', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: promoCode.trim(), email: normalizedEmail }),
+        });
+      } catch {}
     }
 
     if (!data.session) {
@@ -171,6 +183,18 @@ export default function RegisterPage() {
               />
             </div>
             <p className="text-xs text-muted-foreground">{t.passwordHint}</p>
+            <div className="space-y-2">
+              <Label htmlFor="promoCode">{locale === 'ru' ? 'Промокод (необязательно)' : 'Promo Code (optional)'}</Label>
+              <Input
+                id="promoCode"
+                type="text"
+                value={promoCode}
+                onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                placeholder="JULY2026"
+                autoComplete="off"
+                spellCheck={false}
+              />
+            </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
             {success && <p className="text-sm text-green-400">{success}</p>}
             <Button type="submit" className="w-full" disabled={loading}>

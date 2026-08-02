@@ -64,19 +64,23 @@ export function applyTierDiscount(price: number, tier: CustomerTier): number {
 
 export function applyPurchaseDiscounts(
   price: number,
-  opts: { reseller?: boolean; tier?: CustomerTier }
+  opts: { reseller?: boolean; tier?: CustomerTier; hasReferralDiscount?: boolean }
 ): number {
   let amount = price;
   if (opts.reseller) {
     amount = Math.round(amount * RESELLER_DISCOUNT * 100) / 100;
   }
-  return applyTierDiscount(amount, opts.tier ?? 'basic');
+  amount = applyTierDiscount(amount, opts.tier ?? 'basic');
+  if (opts.hasReferralDiscount) {
+    amount = Math.round(amount * 0.85 * 100) / 100;
+  }
+  return amount;
 }
 
 export function getFinalPlanPrice(
   plan: Plan,
   currency: Currency,
-  opts: { reseller?: boolean; tier?: CustomerTier }
+  opts: { reseller?: boolean; tier?: CustomerTier; hasReferralDiscount?: boolean }
 ): number {
   const base = getPlanPrice(plan, currency);
   return applyPurchaseDiscounts(base, opts);

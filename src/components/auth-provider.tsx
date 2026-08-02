@@ -24,6 +24,8 @@ type Profile = {
   accountFrozen: boolean;
   balanceFrozen: boolean;
   accountFreezeReason: string | null;
+  referredByCode?: string | null;
+  discountedPurchasesCount?: number;
 };
 
 type RefreshProfileOptions = {
@@ -114,13 +116,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           account_frozen?: boolean | null;
           balance_frozen?: boolean | null;
           account_freeze_reason?: string | null;
+          referred_by_code?: string | null;
+          discounted_purchases_count?: number | null;
         };
 
         const [primary, walletRes] = await Promise.all([
           supabase
             .from('profiles')
             .select(
-              'balance, email, currency, avatar_url, username, role, roles, account_frozen, balance_frozen, account_freeze_reason'
+              'balance, email, currency, avatar_url, username, role, roles, account_frozen, balance_frozen, account_freeze_reason, referred_by_code, discounted_purchases_count'
             )
             .eq('id', currentUser.id)
             .maybeSingle(),
@@ -132,7 +136,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (primary.error?.message?.includes('role')) {
           const fallback = await supabase
             .from('profiles')
-            .select('balance, email, currency, avatar_url')
+            .select('balance, email, currency, avatar_url, referred_by_code, discounted_purchases_count')
             .eq('id', currentUser.id)
             .maybeSingle();
           data = fallback.data;
@@ -149,7 +153,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const refetch = await supabase
             .from('profiles')
             .select(
-              'balance, email, currency, avatar_url, username, role, roles, account_frozen, balance_frozen, account_freeze_reason'
+              'balance, email, currency, avatar_url, username, role, roles, account_frozen, balance_frozen, account_freeze_reason, referred_by_code, discounted_purchases_count'
             )
             .eq('id', currentUser.id)
             .maybeSingle();
@@ -164,6 +168,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               p_user_id: currentUser.id,
               p_username: pending.trim(),
             });
+          }
+        }
+
+        if (data && !data.referred_by_code) {
+          const pendingPromo = currentUser.user_metadata?.promoCode;
+          if (typeof pendingPromo === 'string' && pendingPromo.trim()) {
+            void fetch('/api/profile/promocode', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ code: pendingPromo.trim() }),
+            })
+              .then((r) => r.json())
+              .then((res) => {
+                if (res.success && res.code) {
+                  data!.referred_by_code = res.code;
+                }
+              })
+              .catch(() => {});
           }
         }
 
@@ -238,6 +260,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           accountFrozen: Boolean(data.account_frozen),
           balanceFrozen: Boolean(data.balance_frozen),
           accountFreezeReason: data.account_freeze_reason ?? null,
+          referredByCode: data.referred_by_code ?? null,
+          discountedPurchasesCount: Number(data.discounted_purchases_count || 0),
         };
 
         const prev = profileRef.current;
