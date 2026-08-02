@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 
-// Summer sale — 7 days from launch (ends Jun 30, 2026 23:59:59)
-const SALE_END = new Date("2026-06-30T23:59:59");
+// Summer sale — 7 days from launch (ends August 09, 2026 23:59:59)
+const SALE_END = new Date("2026-08-09T23:59:59");
 
 function calculateTimeLeft() {
   const difference = +SALE_END - +new Date();

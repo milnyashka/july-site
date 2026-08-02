@@ -56,13 +56,13 @@ export const BANNER_ADS: AdItem[] = [
   },
   {
     id: 'ad-banner-2',
-    title: 'Продавай свои ключи на Маркетплейсе',
-    description: 'Зарабатывай вместе с нами! Нулевая комиссия на первые 100 продаж для новых продавцов.',
-    badge: 'Партнерство',
-    buttonText: 'Открыть Маркетплейс',
-    url: '/marketplace',
+    title: 'Быстрая техподдержка в Telegram и Discord',
+    description: 'Возникли вопросы по установке или настройке? Наша команда ответит вам за пару минут.',
+    badge: 'Поддержка',
+    buttonText: 'Связаться с нами',
+    url: '/support',
     gradient: 'from-emerald-900/40 via-teal-600/20 to-background',
-    sponsorName: 'July Market',
+    sponsorName: 'July Support',
   },
 ];
 

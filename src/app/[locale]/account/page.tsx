@@ -289,12 +289,12 @@ export default function AccountPage() {
               <Store className="h-5 w-5" />
               {m.myPurchases}
             </h2>
-            <Link href={localizedPath(locale, '/marketplace')}>
+            {/* <Link href={localizedPath(locale, '/marketplace')}>
               <Button variant="ghost" size="sm">
                 {m.backToMarket}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
-            </Link>
+            </Link> */}
           </div>
           {dataLoading ? (
             <div className="flex items-center gap-2 text-muted-foreground text-sm">

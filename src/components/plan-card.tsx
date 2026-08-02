@@ -30,6 +30,7 @@ export function PlanCard({ plan, label, durationLabel, popular, reseller }: Plan
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [purchasedKey, setPurchasedKey] = useState<string | null>(null);
+  const [bonusKey, setBonusKey] = useState<string | null>(null);
   const t = dict.wallet;
   const displayCurrency = currencyForLocale(locale);
   const basePrice = getPlanPrice(plan, displayCurrency);
@@ -68,8 +69,16 @@ export function PlanCard({ plan, label, durationLabel, popular, reseller }: Plan
       }
 
       setPurchasedKey(data.key);
+      if (data.bonusKey) {
+        setBonusKey(data.bonusKey);
+      }
       await refreshProfile({ full: true, force: true });
-      toast({ title: t.purchaseSuccess, description: t.keyDelivered });
+      toast({
+        title: t.purchaseSuccess,
+        description: data.bonusKey
+          ? (locale === 'ru' ? 'Получено 2 ключа по акции 1+1!' : 'Received 2 keys via 1+1 promo!')
+          : t.keyDelivered,
+      });
     } catch (err) {
       const code = err instanceof Error ? err.message : undefined;
       toast({
@@ -84,11 +93,16 @@ export function PlanCard({ plan, label, durationLabel, popular, reseller }: Plan
   return (
     <Card className="flex flex-col bg-card/80 border-border/50">
       <CardHeader className="relative p-6">
-        {popular && (
-          <Badge className="absolute top-4 left-4 uppercase tracking-wider text-xs">
-            {dict.productCard.mostPopular}
+        <div className="flex flex-wrap gap-1.5 absolute top-4 left-4">
+          {popular && (
+            <Badge className="uppercase tracking-wider text-xs">
+              {dict.productCard.mostPopular}
+            </Badge>
+          )}
+          <Badge variant="secondary" className="bg-amber-500/20 text-amber-300 border-amber-500/40 text-[10px] font-bold uppercase">
+            1+1 АКЦИЯ
           </Badge>
-        )}
+        </div>
         <div className="text-right text-primary">
           {price < basePrice && (
             <span className="block text-sm text-muted-foreground line-through">
@@ -103,9 +117,17 @@ export function PlanCard({ plan, label, durationLabel, popular, reseller }: Plan
         <CardDescription className="mt-2 text-muted-foreground">{durationLabel}</CardDescription>
 
         {purchasedKey && (
-          <div className="mt-4 rounded-lg border border-primary/30 bg-primary/5 p-3">
-            <p className="text-xs text-muted-foreground mb-1">{t.yourKey}</p>
-            <p className="font-mono text-sm break-all">{purchasedKey}</p>
+          <div className="mt-4 space-y-2">
+            <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
+              <p className="text-xs text-muted-foreground mb-1">{t.yourKey}</p>
+              <p className="font-mono text-sm break-all font-bold text-primary">{purchasedKey}</p>
+            </div>
+            {bonusKey && (
+              <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3">
+                <p className="text-xs text-amber-200 mb-1 font-bold">🎁 Подарочный ключ (1+1):</p>
+                <p className="font-mono text-sm break-all font-bold text-amber-300">{bonusKey}</p>
+              </div>
+            )}
           </div>
         )}
 

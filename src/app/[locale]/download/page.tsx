@@ -28,7 +28,7 @@ export default function DownloadPage() {
       <div className="max-w-4xl mx-auto space-y-10">
         {downloads.map((item, index) => {
           const label = t.items[index];
-          const isMain = item.id === 'july-bypass';
+          const isMain = item.id === 'jule-bypass-4-5' || item.id === 'july-bypass';
 
           return (
             <section
