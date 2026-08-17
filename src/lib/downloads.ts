@@ -20,7 +20,7 @@ export const downloads: DownloadItem[] = [
     size: 'ZIP',
     platform: 'Windows 10/11',
     requiresKey: true,
-    url: 'https://github.com/milnyashka/Jul-W-b/releases/download/v1.0/Jule-bypass-4.5.zip',
+    url: 'https://github.com/milnyashka/Jul-W-b/releases/download/v1.0/jule_bypass_test.1.zip',
   },
   {
     id: 'jule-hax-free-4-5',
