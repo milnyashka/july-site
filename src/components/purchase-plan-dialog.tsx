@@ -40,7 +40,6 @@ export function PurchasePlanDialog({ open, onOpenChange, reseller }: PurchasePla
   const [selectedId, setSelectedId] = useState<PlanId>('30d');
   const [loading, setLoading] = useState(false);
   const [purchasedKey, setPurchasedKey] = useState<string | null>(null);
-  const [bonusKey, setBonusKey] = useState<string | null>(null);
 
   const tier = profile?.tier ?? 'basic';
   const hasReferralDiscount = Boolean(profile?.referredByCode && (profile?.discountedPurchasesCount ?? 0) < 3);
@@ -83,15 +82,10 @@ export function PurchasePlanDialog({ open, onOpenChange, reseller }: PurchasePla
       }
 
       setPurchasedKey(data.key);
-      if (data.bonusKey) {
-        setBonusKey(data.bonusKey);
-      }
       await refreshProfile({ full: true, force: true });
       toast({
         title: w.purchaseSuccess,
-        description: data.bonusKey
-          ? (locale === 'ru' ? 'Вы получили 2 ключа по акции 1+1!' : 'You received 2 keys via 1+1 promo!')
-          : w.keyDelivered,
+        description: w.keyDelivered,
       });
     } catch (err) {
       const code = err instanceof Error ? err.message : undefined;
@@ -107,7 +101,6 @@ export function PurchasePlanDialog({ open, onOpenChange, reseller }: PurchasePla
   const handleOpenChange = (next: boolean) => {
     if (!next) {
       setPurchasedKey(null);
-      setBonusKey(null);
     }
     onOpenChange(next);
   };
@@ -130,38 +123,12 @@ export function PurchasePlanDialog({ open, onOpenChange, reseller }: PurchasePla
               <p className="text-xs text-muted-foreground mb-1">{w.yourKey}</p>
               <p className="font-mono text-sm break-all font-bold text-primary">{purchasedKey}</p>
             </div>
-            {bonusKey && (
-              <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-4">
-                <Badge className="mb-2 bg-amber-500 text-black text-[10px] uppercase font-bold">
-                  🎁 {locale === 'ru' ? 'АКЦИЯ 1+1: Второй ключ бесплатно!' : '1+1 PROMO: Second Key Free!'}
-                </Badge>
-                <p className="text-xs text-amber-200 mb-1">
-                  {locale === 'ru' ? 'Подарочный ключ:' : 'Gift Key:'}
-                </p>
-                <p className="font-mono text-sm break-all font-bold text-amber-300">{bonusKey}</p>
-              </div>
-            )}
             <Button className="w-full font-bold" onClick={() => handleOpenChange(false)}>
               {t.done}
             </Button>
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="rounded-lg border border-amber-500/50 bg-gradient-to-r from-amber-500/20 via-orange-500/10 to-transparent p-3 flex items-center gap-3">
-              <div className="h-8 w-8 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0 text-amber-400 font-bold text-xs">
-                1+1
-              </div>
-              <div className="text-xs">
-                <p className="font-bold text-amber-300 uppercase tracking-wider">
-                  {locale === 'ru' ? '🔥 Летняя акция 1+1' : '🔥 Summer 1+1 Promo'}
-                </p>
-                <p className="text-muted-foreground">
-                  {locale === 'ru'
-                    ? 'При покупке 1 ключа — 2-й ключ выдаётся БЕСПЛАТНО!'
-                    : 'Buy 1 key — get a 2nd key FREE!'}
-                </p>
-              </div>
-            </div>
             <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
               {plans.map((plan) => {
                 const isSelected = plan.id === selectedId;

@@ -1,4 +1,5 @@
 @echo off
+set "PATH=D:\nodejs;%PATH%"
 cd /d "%~dp0"
 echo Stopping old servers...
 taskkill /F /IM node.exe >nul 2>&1

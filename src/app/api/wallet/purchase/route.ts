@@ -47,53 +47,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: data.error }, { status });
   }
 
-  // 1+1 Summer Promo: Issue 2nd key for free
-  let bonusKey: string | null = (data as { bonus_key?: string })?.bonus_key ?? null;
-
-  if (!bonusKey) {
-    try {
-      const dbClient = isServiceConfigured() ? createServiceClient() : supabase;
-
-      // Try to pick an available key from license_keys for this plan
-      const { data: unusedKeys } = await dbClient
-        .from('license_keys')
-        .select('id, key')
-        .eq('plan_id', planId)
-        .eq('used', false)
-        .neq('key', data.key)
-        .limit(1);
-
-      if (unusedKeys && unusedKeys.length > 0) {
-        const bonusItem = unusedKeys[0];
-        bonusKey = bonusItem.key;
-
-        await dbClient
-          .from('license_keys')
-          .update({
-            used: true,
-            assigned_to: user.id,
-            assigned_at: new Date().toISOString(),
-          })
-          .eq('id', bonusItem.id);
-      } else {
-        // Fallback generated bonus key for 1+1 promo
-        const rand1 = Math.random().toString(36).substring(2, 7).toUpperCase();
-        const rand2 = Math.random().toString(36).substring(2, 7).toUpperCase();
-        bonusKey = `JULY-1PLUS1-${planId.toUpperCase()}-${rand1}-${rand2}`;
-      }
-
-      await dbClient.from('purchases').insert({
-        user_id: user.id,
-        plan_id: planId,
-        license_key: bonusKey,
-        amount: 0,
-        amount_usd: 0,
-      });
-    } catch (promoErr) {
-      console.error('[wallet/purchase] 1+1 promo error:', promoErr);
-    }
-  }
-
   // Process Referral Promo Code Commission (15% to promo code owner)
   try {
     const dbClient = isServiceConfigured() ? createServiceClient() : supabase;
@@ -160,8 +113,6 @@ export async function POST(request: Request) {
   return NextResponse.json({
     success: true,
     key: data.key,
-    bonusKey,
     planId: data.plan_id,
-    promo1Plus1: true,
   });
 }

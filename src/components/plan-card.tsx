@@ -30,7 +30,6 @@ export function PlanCard({ plan, label, durationLabel, popular, reseller }: Plan
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [purchasedKey, setPurchasedKey] = useState<string | null>(null);
-  const [bonusKey, setBonusKey] = useState<string | null>(null);
   const t = dict.wallet;
   const displayCurrency = currencyForLocale(locale);
   const basePrice = getPlanPrice(plan, displayCurrency);
@@ -71,15 +70,10 @@ export function PlanCard({ plan, label, durationLabel, popular, reseller }: Plan
       }
 
       setPurchasedKey(data.key);
-      if (data.bonusKey) {
-        setBonusKey(data.bonusKey);
-      }
       await refreshProfile({ full: true, force: true });
       toast({
         title: t.purchaseSuccess,
-        description: data.bonusKey
-          ? (locale === 'ru' ? 'Получено 2 ключа по акции 1+1!' : 'Received 2 keys via 1+1 promo!')
-          : t.keyDelivered,
+        description: t.keyDelivered,
       });
     } catch (err) {
       const code = err instanceof Error ? err.message : undefined;
@@ -101,9 +95,6 @@ export function PlanCard({ plan, label, durationLabel, popular, reseller }: Plan
               {dict.productCard.mostPopular}
             </Badge>
           )}
-          <Badge variant="secondary" className="bg-amber-500/20 text-amber-300 border-amber-500/40 text-[10px] font-bold uppercase">
-            1+1 АКЦИЯ
-          </Badge>
         </div>
         <div className="text-right text-primary">
           {price < basePrice && (
@@ -124,12 +115,6 @@ export function PlanCard({ plan, label, durationLabel, popular, reseller }: Plan
               <p className="text-xs text-muted-foreground mb-1">{t.yourKey}</p>
               <p className="font-mono text-sm break-all font-bold text-primary">{purchasedKey}</p>
             </div>
-            {bonusKey && (
-              <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3">
-                <p className="text-xs text-amber-200 mb-1 font-bold">🎁 Подарочный ключ (1+1):</p>
-                <p className="font-mono text-sm break-all font-bold text-amber-300">{bonusKey}</p>
-              </div>
-            )}
           </div>
         )}
 

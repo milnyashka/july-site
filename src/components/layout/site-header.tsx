@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
-import Countdown from "../countdown";
 import { Icon } from "../icons";
 import { LanguageSwitcher } from "../language-switcher";
 import { WalletBadge } from "../wallet-badge";
@@ -44,12 +43,6 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="bg-primary text-primary-foreground text-center py-2 px-4 text-sm font-semibold">
-        <div className="container flex items-center justify-between gap-3">
-            <span className="truncate">{dict.header.sale}</span>
-            <Countdown />
-        </div>
-      </div>
       <div className="container flex h-16 items-center gap-2">
         <Link href={localizedPath(locale, '/')} className="flex shrink-0 items-center space-x-2 mr-2">
           <Icon.Logo className="h-6 w-6 text-primary" />
