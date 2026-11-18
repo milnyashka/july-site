@@ -13,25 +13,25 @@ export interface DownloadItem {
 export const downloads: DownloadItem[] = [
   {
     id: 'jule-bypass-4-5',
-    name: 'Jule Bypass 4.5',
-    description: 'Официальный обход July Bypass v4.5 для игры.',
+    name: 'Jule Bypass 4.7 - Free'
+    description: 'Официальный обход July Bypass v4.7 для игры.',
     fileName: 'Jule-bypass-4.5.zip',
     version: '4.5',
     size: 'ZIP',
     platform: 'Windows 10/11',
     requiresKey: true,
-    url: 'https://github.com/milnyashka/Jul-W-b/releases/download/v1.0/jule_bypass_test.1.zip',
+        url: 'https://github.com/milnyashka/Jul-W-b/releases/download/v1.0/Kpt.Bypass.Free.zip',
   },
   {
     id: 'jule-hax-free-4-5',
-    name: 'Jule Hax Free 4.5',
-    description: 'Бесплатная версия софта Jule Hax v4.5. Ключ не требуется.',
+      name: 'Jule Bypass 4.7 - Private',
+      description: 'Официальный обход July Bypass v4.7 для игры.',
     fileName: 'jule-hax-free-4.5.rar',
     version: '4.5',
     size: 'RAR',
     platform: 'Windows 10/11',
     requiresKey: false,
-    url: 'https://github.com/milnyashka/Jul-W-b/releases/download/v1.0/jule-hax-free-4.5.rar',
+      url: 'https://github.com/milnyashka/Jul-W-b/releases/download/v1.0/jule_bypass_vip.exe',
   },
   {
     id: 'jule-hax-private-4-5',
