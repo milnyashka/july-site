@@ -427,12 +427,12 @@ export const ru = {
     browseProducts: 'Смотреть продукты',
     items: [
       {
-        name: 'Jule Bypass 4.5',
-        description: 'Официальный обход Jule Bypass v4.5. Требуется лицензионный ключ.',
+        name: 'Jule Bypass 4.7 - Free',
+        description: 'Официальный обход July Bypass v4.7 для игры.',
       },
       {
-        name: 'Jule Hax Free 4.5',
-        description: 'Бесплатная версия софта Jule Hax v4.5. Ключ не требуется.',
+        name: 'Jule Bypass 4.7 - Private',
+        description: 'Официальный обход July Bypass v4.7 для игры.',
       },
       {
         name: 'Jule Hax Private 4.5',

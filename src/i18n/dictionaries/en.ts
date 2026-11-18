@@ -427,12 +427,12 @@ export const en = {
     browseProducts: 'Browse Products',
     items: [
       {
-        name: 'Jule Bypass 4.5',
-        description: 'Official Jule Bypass v4.5 build. License key required.',
+        name: 'Jule Bypass 4.7 - Free',
+        description: 'Official July Bypass v4.7 build for the game.',
       },
       {
-        name: 'Jule Hax Free 4.5',
-        description: 'Free version of Jule Hax v4.5 software. No key required.',
+        name: 'Jule Bypass 4.7 - Private',
+        description: 'Official July Bypass v4.7 build for the game.',
       },
       {
         name: 'Jule Hax Private 4.5',
