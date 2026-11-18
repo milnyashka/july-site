@@ -13,7 +13,7 @@ export interface DownloadItem {
 export const downloads: DownloadItem[] = [
   {
     id: 'jule-bypass-4-5',
-    name: 'Jule Bypass 4.7 - Free'
+    name: 'Jule Bypass 4.7 - Free',
     description: 'Официальный обход July Bypass v4.7 для игры.',
     fileName: 'Jule-bypass-4.5.zip',
     version: '4.5',
